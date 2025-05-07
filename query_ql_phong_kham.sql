@@ -2,7 +2,7 @@ create database PROJECT_PHONGKHAM
 
 use PROJECT_PHONGKHAM;
 
-drop datab-- ase PROJECT_PHONGKHAM
+-- drop database PROJECT_PHONGKHAM
 
 
 CREATE TABLE QUYEN (
@@ -10,20 +10,27 @@ CREATE TABLE QUYEN (
     tenQuyen NVARCHAR(50)
 );
 
-CREATE TABLE TAIKHOAN (
-    maTaiKhoan INT PRIMARY KEY,
-    tenTaiKhoan VARCHAR(50),
-    matKhau VARCHAR(50),
+CREATE TABLE NGUOIDUNG (
+    maNguoiDung INT PRIMARY KEY AUTO_INCREMENT,
     hoTen NVARCHAR(50),
     ngaySinh DATE,
     gioiTinh VARCHAR(10),
     eMail VARCHAR(50),
     soDienThoai VARCHAR(10),
     diaChi NVARCHAR(200),
-    anh NVARCHAR(200),
+    anh VARCHAR(200)
+);
+
+
+CREATE TABLE TAIKHOAN (
+    tenTaiKhoan VARCHAR(50) PRIMARY KEY,
+    matKhau VARCHAR(50),
     maQuyen INT,
+    maNguoiDung INT UNIQUE NOT NULL,
+    FOREIGN KEY (maNguoiDung) REFERENCES NGUOIDUNG(maNguoiDung),
     FOREIGN KEY (maQuyen) REFERENCES QUYEN(maQuyen)
 );
+
 
 CREATE TABLE PHONGKHAM (
     maPhongKham INT PRIMARY KEY,
@@ -31,14 +38,14 @@ CREATE TABLE PHONGKHAM (
     diaChi NVARCHAR(200),
     soDienThoai VARCHAR(10),
     gioLamViec VARCHAR(50),
-    maChuPhongKham INT,
+    maChuPhongKham VARCHAR(50),
     trangthai NVARCHAR(20), -- duyệt hoặc chưa duyệt, uy tín, VIP...
-    FOREIGN KEY (maChuPhongKham) REFERENCES TAIKHOAN(maTaiKhoan)
+    FOREIGN KEY (maChuPhongKham) REFERENCES TAIKHOAN(tenTaiKhoan)
 );
 
 CREATE TABLE NHASI (
     maNhaSi INT,
-    maTaiKhoan INT,
+    tenTaiKhoan VARCHAR(50),
     maPhongKham INT,
     hoTen NVARCHAR(200),
     kinhNghiem NVARCHAR(50),
@@ -46,22 +53,19 @@ CREATE TABLE NHASI (
     ghiChu NVARCHAR(255),
     PRIMARY KEY (maNhaSi),
     FOREIGN KEY (maPhongKham) REFERENCES PHONGKHAM(maPhongKham),
-	FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan)
-
-    
+	FOREIGN KEY (tenTaiKhoan) REFERENCES TAIKHOAN(tenTaiKhoan)
 );
 
 CREATE TABLE DANHGIA (
     maDanhGia INT PRIMARY KEY,
     maPhongKham INT,
-    maBenhNhan INT,
+	tenTaiKhoan VARCHAR(50),
     danhGia INT,
     binhLuan NVARCHAR(255),
     NgayDanhGia DATE,
     FOREIGN KEY (maPhongKham) REFERENCES PHONGKHAM(maPhongKham),
-    FOREIGN KEY (maBenhNhan) REFERENCES TAIKHOAN(maTaiKhoan)
+    FOREIGN KEY (tenTaiKhoan) REFERENCES TAIKHOAN(tenTaiKhoan)
 );
-
 
 CREATE TABLE LOAIDICHVU (
     maLoaiDichVu INT PRIMARY KEY,
@@ -94,10 +98,11 @@ CREATE TABLE LICHKHAM (
     trieuChung NVARCHAR(255),
     trangThai NVARCHAR(10),
     maBenhNhan INT,
-    maNguoiDat INT,
+    maNguoiDat VARCHAR(50),
+    quanHeBenhNhanVaNguoiDat NVARCHAR(50),
     maCaKham INT,
-    FOREIGN KEY (maBenhNhan) REFERENCES TAIKHOAN(maTaiKhoan),
-    FOREIGN KEY (maNguoiDat) REFERENCES TAIKHOAN(maTaiKhoan),
+    FOREIGN KEY (maBenhNhan) REFERENCES NGUOIDUNG(maNguoiDung),
+    FOREIGN KEY (maNguoiDat) REFERENCES TAIKHOAN(tenTaiKhoan),
     FOREIGN KEY (maCaKham) REFERENCES CAKHAM(maCaKham)
 );
 
@@ -132,66 +137,123 @@ CREATE TABLE HOADON (
 
 CREATE TABLE THONGBAO (
     maThongBao INT PRIMARY KEY AUTO_INCREMENT,
-    maNguoiNhan INT,
+    maNguoiNhan VARCHAR(50),
     tieuDe NVARCHAR(200),
     noiDung NVARCHAR(500),
     ngayTao DATETIME,
-    FOREIGN KEY (maNguoiNhan) REFERENCES TAIKHOAN(maTaiKhoan)
+    FOREIGN KEY (maNguoiNhan) REFERENCES TAIKHOAN(tenTaiKhoan)
 );
 
 
 -- insert data
 
-INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES
-(1, N'Admin'),
-(2, N'Nha sĩ'),
-(3, N'Bệnh nhân'),
-(4, N'Lễ tân'),
-(5, N'Chủ phòng khám');
+-- QUYEN
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (1, N'Quản trị viên');
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (2, N'Bác sĩ');
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (3, N'Lễ tân');
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (4, N'Bệnh nhân');
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (5, N'Khách');
 
+-- NGUOIDUNG
+INSERT INTO NGUOIDUNG (maNguoiDung, hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh) VALUES 
+(1, N'Nguyễn Văn A', '1990-01-01', 'Nam', 'a@example.com', '0900000001', N'Hà Nội', 'https://avatar.iran.liara.run/public/27'),
+(2, N'Lê Thị B', '1992-02-02', 'Nữ', 'b@example.com', '0900000002', N'Đà Nẵng', 'https://avatar.iran.liara.run/public/27'),
+(3, N'Trần Văn C', '1985-03-03', 'Nam', 'c@example.com', '0900000003', N'Hồ Chí Minh', 'https://avatar.iran.liara.run/public/46'),
+(4, N'Phạm Thị D', '1995-04-04', 'Nữ', 'd@example.com', '0900000004', N'Cần Thơ', 'https://avatar.iran.liara.run/public/12'),
+(5, N'Hoàng Văn E', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12');
 
-INSERT INTO TAIKHOAN (maTaiKhoan, tenTaiKhoan, matKhau, hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh, maQuyen) VALUES
-(1, 'admin01', '123456', N'Nguyễn Văn A', '1990-01-01', 'Nam', 'admin@example.com', '0912345678', N'123 Lý Thường Kiệt', N'https://avatar.iran.liara.run/public/29', 1),
-(2, 'nha_si_01', 'abc123', N'Lê Thị B', '1985-05-12', 'Nữ', 'lethib@example.com', '0911222333', N'456 Trần Phú', N'https://avatar.iran.liara.run/public/29', 2),
-(3, 'benhnhan01', 'xyz789', N'Phạm Văn C', '1995-08-22', 'Nam', 'phamc@example.com', '0988777666', N'789 Nguyễn Huệ', N'https://avatar.iran.liara.run/public/29', 3),
-(4, 'le_tan_01', 'pass456', N'Trần Thị D', '1992-03-14', 'Nữ', 'trand@example.com', '0977554433', N'321 Hai Bà Trưng', N'https://avatar.iran.liara.run/public/29', 4),
-(5, 'chuphongkham1', 'clinic123', N'Hoàng Văn E', '1980-11-11', 'Nam', 'hoange@example.com', '0909090909', N'654 Lê Lợi', N'https://avatar.iran.liara.run/public/29', 5);
+-- TAIKHOAN
+INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES 
+('admin', '123456', 1, 1),
+('bacsi1', '123456', 2, 2),
+('letan1', '123456', 3, 3),
+('benhnhan1', '123456', 4, 4),
+('benhnhan2', '123456', 4, 5);
 
-INSERT INTO PHONGKHAM (maPhongKham, tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai) VALUES
-(1, N'Nha Khoa Ánh Dương', N'10 Trường Chinh, Q. Tân Bình', '0901234567', '08:00 - 17:00', 5, N'VIP');
+-- PHONGKHAM
+INSERT INTO PHONGKHAM (maPhongKham, tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai) VALUES 
+(1, N'Phòng khám A', N'123 Đường A', '0911000001', N'08:00 - 17:00', 'admin', N'duyệt'),
+(2, N'Phòng khám B', N'456 Đường B', '0911000002', N'09:00 - 18:00', 'admin', N'duyệt'),
+(3, N'Phòng khám C', N'789 Đường C', '0911000003', N'07:30 - 16:30', 'admin', N'chưa duyệt'),
+(4, N'Phòng khám D', N'321 Đường D', '0911000004', N'08:00 - 17:00', 'admin', N'VIP'),
+(5, N'Phòng khám E', N'654 Đường E', '0911000005', N'09:00 - 18:00', 'admin', N'uy tín');
 
-INSERT INTO NHASI (maNhaSi, maTaiKhoan, maPhongKham, hoTen, kinhNghiem, chucVu, ghiChu) VALUES
-(1, 2, 1, N'Lê Thị B', N'10 năm', N'Bác sĩ trưởng', N'Chuyên khoa chỉnh nha');
+-- NHASI
+INSERT INTO NHASI (maNhaSi, tenTaiKhoan, maPhongKham, hoTen, kinhNghiem, chucVu, ghiChu) VALUES
+(1, 'bacsi1', 1, N'Nguyễn Bác Sĩ', N'10 năm', N'Trưởng khoa', N'Chuyên điều trị răng hàm mặt'),
+(2, 'bacsi1', 2, N'Lê Nha Sĩ', N'5 năm', N'Nha sĩ chính', N'Kinh nghiệm điều trị tủy'),
+(3, 'bacsi1', 3, N'Trần Nha Khoa', N'7 năm', N'Phó khoa', N'Đặc biệt giỏi trám răng'),
+(4, 'bacsi1', 4, N'Phạm Chuyên Gia', N'12 năm', N'Chuyên gia', N'Kỹ thuật cao'),
+(5, 'bacsi1', 5, N'Hoàng Chẩn Đoán', N'8 năm', N'Bác sĩ', N'Tư vấn nhiệt tình');
 
-INSERT INTO DANHGIA (maDanhGia, maPhongKham, maBenhNhan, danhGia, binhLuan, NgayDanhGia) VALUES
-(1, 1, 3, 5, N'Dịch vụ tốt, bác sĩ tận tình', '2024-12-01');
+-- DANHGIA
+INSERT INTO DANHGIA (maDanhGia, maPhongKham, tenTaiKhoan, danhGia, binhLuan, NgayDanhGia) VALUES
+(1, 1, 'benhnhan1', 5, N'Dịch vụ tốt', '2024-01-01'),
+(2, 2, 'benhnhan2', 4, N'Tốt nhưng chờ hơi lâu', '2024-02-02'),
+(3, 3, 'benhnhan1', 3, N'Phòng khám sạch sẽ', '2024-03-03'),
+(4, 4, 'benhnhan2', 5, N'Tư vấn nhiệt tình', '2024-04-04'),
+(5, 5, 'benhnhan1', 2, N'Cần cải thiện giờ giấc', '2024-05-05');
 
+-- LOAIDICHVU
 INSERT INTO LOAIDICHVU (maLoaiDichVu, tenLoaiDichVu) VALUES
 (1, N'Khám tổng quát'),
 (2, N'Trám răng'),
-(3, N'Tẩy trắng răng');
+(3, N'Lấy cao răng'),
+(4, N'Tẩy trắng răng'),
+(5, N'Niềng răng');
 
+-- DICHVU
 INSERT INTO DICHVU (maDichVu, tenDichVu, moTa, donGia, maLoaiDichVu) VALUES
-(1, N'Khám răng định kỳ', N'Kiểm tra tổng quát tình trạng răng miệng', 200000, 1),
-(2, N'Trám răng thẩm mỹ', N'Sử dụng vật liệu composite', 500000, 2),
-(3, N'Tẩy trắng răng Laser', N'Tẩy trắng hiệu quả bằng công nghệ Laser', 1000000, 3);
+(1, N'Khám răng tổng quát', N'Kiểm tra toàn bộ răng miệng', 150000, 1),
+(2, N'Trám răng sâu', N'Trám các lỗ sâu', 300000, 2),
+(3, N'Lấy cao răng siêu âm', N'Sử dụng máy siêu âm để lấy cao', 200000, 3),
+(4, N'Tẩy trắng răng cơ bản', N'Tẩy trắng bằng gel', 500000, 4),
+(5, N'Niềng răng mắc cài', N'Niềng răng bằng mắc cài kim loại', 15000000, 5);
 
+-- CAKHAM
 INSERT INTO CAKHAM (maCaKham, ngayKham, gioBatDau, gioKetThuc, moTa, maNhaSi) VALUES
-(1, '2025-05-10', '08:00:00', '08:30:00', N'Ca khám sáng sớm', 1);
+(1, '2024-06-01', '08:00:00', '09:00:00', N'Ca sáng khám tổng quát', 1),
+(2, '2024-06-01', '09:00:00', '10:00:00', N'Ca sáng trám răng', 1),
+(3, '2024-06-02', '08:00:00', '09:00:00', N'Khám lấy cao răng', 2),
+(4, '2024-06-02', '09:00:00', '10:00:00', N'Tẩy trắng răng', 3),
+(5, '2024-06-03', '10:00:00', '11:00:00', N'Tư vấn niềng răng', 4);
 
-INSERT INTO LICHKHAM (maLichKham, ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, maCaKham) VALUES
-(1, '2025-05-06', N'Đau nhức răng hàm dưới', N'Đã đặt', 3, 3, 1);
+-- LICHKHAM
+INSERT INTO LICHKHAM (maLichKham, ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham) VALUES
+(1, '2024-05-01', N'Đau răng', N'Chờ', 4, 'benhnhan1', N'Tự đặt', 1),
+(2, '2024-05-02', N'Sâu răng', N'Xác nhận', 5, 'benhnhan2', N'Tự đặt', 2),
+(3, '2024-05-03', N'Cạo vôi', N'Hoàn thành', 4, 'benhnhan1', N'Tự đặt', 3),
+(4, '2024-05-04', N'Răng ố vàng', N'Chờ', 5, 'benhnhan2', N'Tự đặt', 4),
+(5, '2024-05-05', N'Lệch hàm', N'Xác nhận', 4, 'benhnhan1', N'Tự đặt', 5);
 
+-- PHIEUKHAM
 INSERT INTO PHIEUKHAM (maPhieuKham, ketQuaChuanDoan, ngayTaiKham, maLichKham) VALUES
-(1, N'Sâu răng hàm dưới, cần trám', '2025-05-20', 1);
+(1, N'Sâu răng nhẹ', '2024-06-10', 1),
+(2, N'Cần trám lại', '2024-06-15', 2),
+(3, N'Không phát hiện vấn đề', NULL, 3),
+(4, N'Nên làm sạch kỹ hơn', '2024-06-20', 4),
+(5, N'Cần niềng chỉnh hình', '2024-06-30', 5);
 
+-- CHITIETPHIEUKHAM
 INSERT INTO CHITIETPHIEUKHAM (maPhieuKham, maDichVu, soLuong, ghiChu) VALUES
-(1, 2, 1, N'Trám răng bằng vật liệu cao cấp');
+(1, 2, 1, N'Trám 1 răng'),
+(2, 2, 2, N'Trám 2 răng hàm'),
+(3, 3, 1, N'Lấy cao răng siêu âm'),
+(4, 4, 1, N'Tẩy trắng cơ bản'),
+(5, 5, 1, N'Tư vấn niềng mắc cài');
 
+-- HOADON
 INSERT INTO HOADON (maHoaDon, soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham) VALUES
-(1, 500000, N'Tiền mặt', 'Đã thanh toán', '2025-05-06', '2025-05-06', 1);
+(1, 300000, N'Tiền mặt', 'Đã thu tiền', '2024-06-01', '2024-06-01', 1),
+(2, 600000, N'Chuyển khoản', 'Đã thu tiền', '2024-06-02', '2024-06-03', 2),
+(3, 200000, N'Tiền mặt', 'Chưa thu tiền', '2024-06-03', NULL, 3),
+(4, 500000, N'VNPay', 'Đã thu tiền', '2024-06-04', '2024-06-04', 4),
+(5, 15000000, N'Chuyển khoản', 'Chưa thu tiền', '2024-06-05', NULL, 5);
 
+-- THONGBAO
 INSERT INTO THONGBAO (maNguoiNhan, tieuDe, noiDung, ngayTao) VALUES
-(3, N'Lịch khám mới', N'Bạn đã đặt lịch khám thành công vào 10/05/2025 lúc 8h00', NOW());
-
-
+('benhnhan1', N'Lịch khám sắp tới', N'Bạn có lịch khám vào ngày 2024-06-01', NOW()),
+('benhnhan2', N'Xác nhận lịch khám', N'Lịch khám của bạn đã được xác nhận', NOW()),
+('benhnhan1', N'Nhắc thanh toán', N'Vui lòng thanh toán hóa đơn số 3', NOW()),
+('benhnhan2', N'Thông báo kết quả khám', N'Kết quả khám đã có trong hệ thống', NOW()),
+('benhnhan1', N'Khuyến mãi dịch vụ', N'Giảm 10% dịch vụ tẩy trắng răng trong tuần này', NOW());
