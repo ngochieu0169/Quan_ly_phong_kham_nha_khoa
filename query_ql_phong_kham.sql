@@ -2,7 +2,7 @@ create database PROJECT_PHONGKHAM
 
 use PROJECT_PHONGKHAM;
 
--- drop database PROJECT_PHONGKHAM
+drop datab-- ase PROJECT_PHONGKHAM
 
 
 CREATE TABLE QUYEN (
@@ -31,20 +31,24 @@ CREATE TABLE PHONGKHAM (
     diaChi NVARCHAR(200),
     soDienThoai VARCHAR(10),
     gioLamViec VARCHAR(50),
-    giaKhamChung DECIMAL,
     maChuPhongKham INT,
+    trangthai NVARCHAR(20), -- duyệt hoặc chưa duyệt, uy tín, VIP...
     FOREIGN KEY (maChuPhongKham) REFERENCES TAIKHOAN(maTaiKhoan)
 );
 
 CREATE TABLE NHASI (
     maNhaSi INT,
+    maTaiKhoan INT,
     maPhongKham INT,
     hoTen NVARCHAR(200),
     kinhNghiem NVARCHAR(50),
     chucVu NVARCHAR(50),
     ghiChu NVARCHAR(255),
     PRIMARY KEY (maNhaSi),
-    FOREIGN KEY (maPhongKham) REFERENCES PHONGKHAM(maPhongKham)
+    FOREIGN KEY (maPhongKham) REFERENCES PHONGKHAM(maPhongKham),
+	FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan)
+
+    
 );
 
 CREATE TABLE DANHGIA (
@@ -73,11 +77,15 @@ CREATE TABLE DICHVU (
     FOREIGN KEY (maLoaiDichVu) REFERENCES LOAIDICHVU(maLoaiDichVu)
 );
 
+-- Mỗi bác sĩ có thể đăng ký ca khám dựa theo lịch cá nhân của mình, sau đó bệnh nhân sẽ book ca khám
 CREATE TABLE CAKHAM (
     maCaKham INT PRIMARY KEY,
+	ngayKham DATE,
     gioBatDau TIME,
     gioKetThuc TIME,
-    moTa NVARCHAR(200)
+    moTa NVARCHAR(200),
+	maNhaSi INT,
+	FOREIGN KEY (maNhaSi) REFERENCES NHASI(maNhaSi)
 );
 
 CREATE TABLE LICHKHAM (
@@ -86,25 +94,19 @@ CREATE TABLE LICHKHAM (
     trieuChung NVARCHAR(255),
     trangThai NVARCHAR(10),
     maBenhNhan INT,
-    maNhaSi INT,
-    maPhongKham INT,
+    maNguoiDat INT,
     maCaKham INT,
     FOREIGN KEY (maBenhNhan) REFERENCES TAIKHOAN(maTaiKhoan),
-    FOREIGN KEY (maNhaSi) REFERENCES NHASI(maNhaSi),
-    FOREIGN KEY (maPhongKham) REFERENCES PHONGKHAM(maPhongKham),
+    FOREIGN KEY (maNguoiDat) REFERENCES TAIKHOAN(maTaiKhoan),
     FOREIGN KEY (maCaKham) REFERENCES CAKHAM(maCaKham)
 );
 
-CREATE TABLE PhieuKham (
+CREATE TABLE PHIEUKHAM (
     maPhieuKham INT PRIMARY KEY,
-    ngayKham DATE,
-    TrieuChung NVARCHAR(255),
     ketQuaChuanDoan NVARCHAR(255),
     ngayTaiKham DATE,
     maLichKham INT,
-    maNhaSi INT,
-    FOREIGN KEY (maLichKham) REFERENCES LICHKHAM(maLichKham),
-    FOREIGN KEY (maNhaSi) REFERENCES NHASI(maNhaSi)
+    FOREIGN KEY (maLichKham) REFERENCES LICHKHAM(maLichKham)
 );
 
 CREATE TABLE CHITIETPHIEUKHAM (
@@ -113,7 +115,7 @@ CREATE TABLE CHITIETPHIEUKHAM (
     soLuong INT,
     ghiChu NVARCHAR(255),
     PRIMARY KEY (maPhieuKham, maDichVu),
-    FOREIGN KEY (maPhieuKham) REFERENCES PhieuKham(maPhieuKham),
+    FOREIGN KEY (maPhieuKham) REFERENCES PHIEUKHAM(maPhieuKham),
     FOREIGN KEY (maDichVu) REFERENCES DICHVU(maDichVu)
 );
 
@@ -121,70 +123,75 @@ CREATE TABLE HOADON (
     maHoaDon INT PRIMARY KEY,
     soTien DECIMAL,
     phuongThuc NVARCHAR(15),
-    ngayThanhToan DATE,
+    trangThai VARCHAR(30), -- đã thu tiền/chưa thu tiền
+    ngaytao DATE,
+    ngayThanhToan DATE, -- để biết có quá hạn thanh toán hay chưa
     maPhieuKham INT,
-    FOREIGN KEY (maPhieuKham) REFERENCES PhieuKham(maPhieuKham)
+    FOREIGN KEY (maPhieuKham) REFERENCES PHIEUKHAM(maPhieuKham)
 );
+
+CREATE TABLE THONGBAO (
+    maThongBao INT PRIMARY KEY AUTO_INCREMENT,
+    maNguoiNhan INT,
+    tieuDe NVARCHAR(200),
+    noiDung NVARCHAR(500),
+    ngayTao DATETIME,
+    FOREIGN KEY (maNguoiNhan) REFERENCES TAIKHOAN(maTaiKhoan)
+);
+
 
 -- insert data
 
-INSERT INTO QUYEN VALUES
-(1, N'Khách vãng lai'),
-(2, N'Bệnh nhân'),
-(3, N'Lễ tân'),
-(4, N'Nha sĩ'),
-(5, N'Chủ phòng khám'),
-(6, N'Quản trị viên');
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES
+(1, N'Admin'),
+(2, N'Nha sĩ'),
+(3, N'Bệnh nhân'),
+(4, N'Lễ tân'),
+(5, N'Chủ phòng khám');
 
-INSERT INTO TAIKHOAN VALUES
-(1, 'khanh123', 'matkhau1', N'Nguyễn Văn Khánh', '1995-03-15', 'Nam', 'khanh@gmail.com', '0912345678', N'123 Lê Lợi, Quận 1', N'https://avatar.iran.liara.run/public/29', 2),
-(2, 'tuanpt', '123456', N'Phạm Tuấn', '1990-11-22', 'Nam', 'tuanpt@gmail.com', '0987654321', N'45 Pasteur, Quận 3', N'https://avatar.iran.liara.run/public/20', 4),
-(3, 'lienle', 'mk987', N'Lê Thị Liên', '1988-08-08', 'Nữ', 'lienle@gmail.com', '0911111111', N'78 Nguyễn Trãi, Q5', N'https://avatar.iran.liara.run/public/35', 3),
-(4, 'admin', 'admin123', N'Quản Trị Viên', '1980-01-01', 'Nam', 'admin@admin.com', '0900000000', N'Hệ thống', N'https://avatar.iran.liara.run/public/16', 6),
-(5, 'chuPK', 'pk123', N'Ngô Thị Mai', '1985-05-05', 'Nữ', 'ngomai@gmail.com', '0901122334', N'01 Hùng Vương, Q1', N'https://avatar.iran.liara.run/public/37', 5);
 
-INSERT INTO PHONGKHAM VALUES
-(1, N'Phòng khám An Khang', N'123 Trần Hưng Đạo, Quận 5', '0283456789', 'T2-T6: 8h-17h', 200000, 5),
-(2, N'Phòng khám Răng Xinh', N'456 Nguyễn Văn Cừ, Quận 1', '0282222333', 'T2-T7: 9h-18h', 250000, 5);
+INSERT INTO TAIKHOAN (maTaiKhoan, tenTaiKhoan, matKhau, hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh, maQuyen) VALUES
+(1, 'admin01', '123456', N'Nguyễn Văn A', '1990-01-01', 'Nam', 'admin@example.com', '0912345678', N'123 Lý Thường Kiệt', N'https://avatar.iran.liara.run/public/29', 1),
+(2, 'nha_si_01', 'abc123', N'Lê Thị B', '1985-05-12', 'Nữ', 'lethib@example.com', '0911222333', N'456 Trần Phú', N'https://avatar.iran.liara.run/public/29', 2),
+(3, 'benhnhan01', 'xyz789', N'Phạm Văn C', '1995-08-22', 'Nam', 'phamc@example.com', '0988777666', N'789 Nguyễn Huệ', N'https://avatar.iran.liara.run/public/29', 3),
+(4, 'le_tan_01', 'pass456', N'Trần Thị D', '1992-03-14', 'Nữ', 'trand@example.com', '0977554433', N'321 Hai Bà Trưng', N'https://avatar.iran.liara.run/public/29', 4),
+(5, 'chuphongkham1', 'clinic123', N'Hoàng Văn E', '1980-11-11', 'Nam', 'hoange@example.com', '0909090909', N'654 Lê Lợi', N'https://avatar.iran.liara.run/public/29', 5);
 
-INSERT INTO NHASI VALUES
-(101, 1, N'Phạm Tuấn', N'10 năm', N'Bác sĩ trưởng', N'Chuyên sâu niềng răng'),
-(102, 2, N'Lê Minh Hùng', N'5 năm', N'Nha sĩ tổng quát', N'Chuyên khám răng sâu');
+INSERT INTO PHONGKHAM (maPhongKham, tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai) VALUES
+(1, N'Nha Khoa Ánh Dương', N'10 Trường Chinh, Q. Tân Bình', '0901234567', '08:00 - 17:00', 5, N'VIP');
 
-INSERT INTO DANHGIA VALUES
-(1, 1, 1, 5, N'Rất hài lòng', '2024-05-01'),
-(2, 2, 1, 4, N'Phục vụ tốt', '2024-05-02'),
-(3, 1, 1, 3, N'Bình thường', '2024-05-03');
+INSERT INTO NHASI (maNhaSi, maTaiKhoan, maPhongKham, hoTen, kinhNghiem, chucVu, ghiChu) VALUES
+(1, 2, 1, N'Lê Thị B', N'10 năm', N'Bác sĩ trưởng', N'Chuyên khoa chỉnh nha');
 
-INSERT INTO LOAIDICHVU VALUES
-(1, N'Tổng quát'),
-(2, N'Chỉnh nha'),
-(3, N'Tẩy trắng');
+INSERT INTO DANHGIA (maDanhGia, maPhongKham, maBenhNhan, danhGia, binhLuan, NgayDanhGia) VALUES
+(1, 1, 3, 5, N'Dịch vụ tốt, bác sĩ tận tình', '2024-12-01');
 
-INSERT INTO DICHVU VALUES
-(1, N'Khám tổng quát', N'Kiểm tra răng miệng', 200000, 1),
-(2, N'Niềng răng', N'Sửa lệch hàm', 15000000, 2),
-(3, N'Tẩy trắng răng', N'Sử dụng công nghệ laser', 3000000, 3);
+INSERT INTO LOAIDICHVU (maLoaiDichVu, tenLoaiDichVu) VALUES
+(1, N'Khám tổng quát'),
+(2, N'Trám răng'),
+(3, N'Tẩy trắng răng');
 
-INSERT INTO CAKHAM VALUES
-(1, '07:00:00', '08:00:00', N'Ca sáng sớm'),
-(2, '08:00:00', '09:00:00', N'Ca sáng'),
-(3, '14:00:00', '15:00:00', N'Ca chiều');
+INSERT INTO DICHVU (maDichVu, tenDichVu, moTa, donGia, maLoaiDichVu) VALUES
+(1, N'Khám răng định kỳ', N'Kiểm tra tổng quát tình trạng răng miệng', 200000, 1),
+(2, N'Trám răng thẩm mỹ', N'Sử dụng vật liệu composite', 500000, 2),
+(3, N'Tẩy trắng răng Laser', N'Tẩy trắng hiệu quả bằng công nghệ Laser', 1000000, 3);
 
-INSERT INTO LICHKHAM VALUES
-(1, '2024-05-10', N'Đau nhức răng', N'Chờ', 1, 101, 1, 1),
-(2, '2024-05-11', N'Hôi miệng', N'Xác nhận', 1, 102, 2, 2),
-(3, '2024-05-12', N'Răng mọc lệch', N'Đã khám', 1, 101, 1, 3);
+INSERT INTO CAKHAM (maCaKham, ngayKham, gioBatDau, gioKetThuc, moTa, maNhaSi) VALUES
+(1, '2025-05-10', '08:00:00', '08:30:00', N'Ca khám sáng sớm', 1);
 
-INSERT INTO PhieuKham VALUES
-(1, '2024-05-10', N'Đau nhức răng', N'Sâu răng hàm', '2024-06-10', 1, 101),
-(2, '2024-05-11', N'Hôi miệng', N'Viêm lợi nhẹ', NULL, 2, 102);
+INSERT INTO LICHKHAM (maLichKham, ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, maCaKham) VALUES
+(1, '2025-05-06', N'Đau nhức răng hàm dưới', N'Đã đặt', 3, 3, 1);
 
-INSERT INTO CHITIETPHIEUKHAM VALUES
-(1, 1, 1, N'Khám tổng quát'),
-(1, 3, 1, N'Áp dụng tẩy trắng'),
-(2, 1, 1, N'Khám ban đầu');
+INSERT INTO PHIEUKHAM (maPhieuKham, ketQuaChuanDoan, ngayTaiKham, maLichKham) VALUES
+(1, N'Sâu răng hàm dưới, cần trám', '2025-05-20', 1);
 
-INSERT INTO HOADON VALUES
-(1, 3200000, N'Tiền mặt', '2024-05-10', 1),
-(2, 200000, N'Chuyển khoản', '2024-05-11', 2);
+INSERT INTO CHITIETPHIEUKHAM (maPhieuKham, maDichVu, soLuong, ghiChu) VALUES
+(1, 2, 1, N'Trám răng bằng vật liệu cao cấp');
+
+INSERT INTO HOADON (maHoaDon, soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham) VALUES
+(1, 500000, N'Tiền mặt', 'Đã thanh toán', '2025-05-06', '2025-05-06', 1);
+
+INSERT INTO THONGBAO (maNguoiNhan, tieuDe, noiDung, ngayTao) VALUES
+(3, N'Lịch khám mới', N'Bạn đã đặt lịch khám thành công vào 10/05/2025 lúc 8h00', NOW());
+
+
