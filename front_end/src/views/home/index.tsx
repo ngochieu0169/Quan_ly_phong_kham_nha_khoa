@@ -12,9 +12,6 @@ function HomePage() {
   return (
     <div>
       <TheBanner/>
-      <section className="home-page">
-        home page
-      </section>
     </div>
   );
 }
