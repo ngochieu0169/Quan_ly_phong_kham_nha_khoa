@@ -77,6 +77,7 @@ CREATE TABLE DICHVU (
     tenDichVu NVARCHAR(200),
     moTa NVARCHAR(255),
     donGia DECIMAL,
+    anh VARCHAR(255),
     maLoaiDichVu INT,
     FOREIGN KEY (maLoaiDichVu) REFERENCES LOAIDICHVU(maLoaiDichVu)
 );
@@ -203,12 +204,12 @@ INSERT INTO LOAIDICHVU (maLoaiDichVu, tenLoaiDichVu) VALUES
 (5, N'Niềng răng');
 
 -- DICHVU
-INSERT INTO DICHVU (maDichVu, tenDichVu, moTa, donGia, maLoaiDichVu) VALUES
-(1, N'Khám răng tổng quát', N'Kiểm tra toàn bộ răng miệng', 150000, 1),
-(2, N'Trám răng sâu', N'Trám các lỗ sâu', 300000, 2),
-(3, N'Lấy cao răng siêu âm', N'Sử dụng máy siêu âm để lấy cao', 200000, 3),
-(4, N'Tẩy trắng răng cơ bản', N'Tẩy trắng bằng gel', 500000, 4),
-(5, N'Niềng răng mắc cài', N'Niềng răng bằng mắc cài kim loại', 15000000, 5);
+INSERT INTO DICHVU (maDichVu, tenDichVu, moTa, donGia, anh, maLoaiDichVu) VALUES
+(1, N'Khám răng tổng quát', N'Kiểm tra toàn bộ răng miệng', 150000, '',1),
+(2, N'Trám răng sâu', N'Trám các lỗ sâu', 300000, '', 2),
+(3, N'Lấy cao răng siêu âm', N'Sử dụng máy siêu âm để lấy cao', 200000, '', 3),
+(4, N'Tẩy trắng răng cơ bản', N'Tẩy trắng bằng gel', 500000, '',4),
+(5, N'Niềng răng mắc cài', N'Niềng răng bằng mắc cài kim loại', '', 15000000, 5);
 
 -- CAKHAM
 INSERT INTO CAKHAM (maCaKham, ngayKham, gioBatDau, gioKetThuc, moTa, maNhaSi) VALUES
