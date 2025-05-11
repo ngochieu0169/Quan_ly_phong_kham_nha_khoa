@@ -1,5 +1,8 @@
 // import { ALBUMS, TOPALBUMS } from "../constants";
 
+import LoginPage from "../views/auth/login";
+import PersonalPage from "../views/auth/personal";
+import RegisterPage from "../views/auth/register";
 import HomePage from "../views/home";
 import BookingPage from "../views/home/bookingPage";
 
@@ -13,6 +16,16 @@ const publicRoutes = [
     path: "/booking",
     component: BookingPage,
   },
+  {
+    name: "login",
+    path: "/login",
+    component: LoginPage,
+  },
+  {
+    name: "register",
+    path: "/register",
+    component: RegisterPage,
+  },
 
   // {
   //   name: "album_detail",
@@ -23,15 +36,11 @@ const publicRoutes = [
 ];
 
 const privateRoutes = [
-  // {
-  //   path: "/customer",
-  //   component: CustomerPage
-  // },
   {
-    name: "login",
-    path: "/login",
-    component: '',
+    path: "/user",
+    component: PersonalPage
   },
+
   // {
   //   name: "register",
   //   path: "/register",

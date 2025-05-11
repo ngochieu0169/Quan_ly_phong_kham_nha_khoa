@@ -8,14 +8,13 @@ function TheBanner() {
               <div className="block">
                 <div className="divider mb-3"></div>
                 <span className="text-uppercase text-sm letter-spacing ">
-                  Total Health care solution
+                  Chăm sóc răng toàn diện
                 </span>
-                <h1 className="mb-3 mt-3">Your most trusted health partner</h1>
+                <h1 className="mb-3 mt-3">Hệ thống Nha Khoa ABC</h1>
 
                 <p className="mb-4 pr-5">
-                  A repudiandae ipsam labore ipsa voluptatum quidem quae
-                  laudantium quisquam aperiam maiores sunt fugit, deserunt rem
-                  suscipit placeat.
+                  Hệ thống nha khoa hàng đầu Đà Nẵng. Sứ mệnh của chúng tôi là
+                  cung cấp dịch vụ nha khoa tốt nhất đến mọi người
                 </p>
                 <div className="btn-container ">
                   <a
@@ -23,7 +22,7 @@ function TheBanner() {
                     target="_blank"
                     className="btn btn-main-2 btn-icon btn-round-full"
                   >
-                    Make appoinment{" "}
+                    Đặt lịch khám ngay
                     <i className="icofont-simple-right ml-2  "></i>
                   </a>
                 </div>
@@ -41,17 +40,17 @@ function TheBanner() {
                   <div className="feature-icon mb-4">
                     <i className="icofont-surgeon-alt"></i>
                   </div>
-                  <span>24 Hours Service</span>
-                  <h4 className="mb-3">Online Appoinment</h4>
+                  <span>Dịch vụ 24/7</span>
+                  <h4 className="mb-3">Đặt lịch online</h4>
                   <p className="mb-4">
-                    Get ALl time support for emergency.We have introduced the
-                    principle of family medicine.
+                    Hỗ trợ đặt lịch bất kỳ đâu, bất kỳ nơi nào, nhanh chóng và
+                    tiện lợi
                   </p>
                   <a
                     href="appoinment.html"
                     className="btn btn-main btn-round-full"
                   >
-                    Make a appoinment
+                    Đặt lịch khám ngay
                   </a>
                 </div>
 
@@ -59,17 +58,17 @@ function TheBanner() {
                   <div className="feature-icon mb-4">
                     <i className="icofont-ui-clock"></i>
                   </div>
-                  <span>Timing schedule</span>
-                  <h4 className="mb-3">Working Hours</h4>
+                  <span>Thời gian làm việc linh hoạt</span>
+                  <h4 className="mb-3">Ca cố định</h4>
                   <ul className="w-hours list-unstyled">
                     <li className="d-flex justify-content-between">
-                      Sun - Wed : <span>8:00 - 17:00</span>
+                      Thứ 2 - Thứ 6 : <span>7:00 - 17:30</span>
                     </li>
                     <li className="d-flex justify-content-between">
-                      Thu - Fri : <span>9:00 - 17:00</span>
+                      Thứ 7 : <span>7:30 - 18:30</span>
                     </li>
                     <li className="d-flex justify-content-between">
-                      Sat - sun : <span>10:00 - 17:00</span>
+                      Chủ nhật : <span>8:00 - 19:00</span>
                     </li>
                   </ul>
                 </div>
@@ -78,12 +77,11 @@ function TheBanner() {
                   <div className="feature-icon mb-4">
                     <i className="icofont-support"></i>
                   </div>
-                  <span>Emegency Cases</span>
+                  <span>Tổng đài</span>
                   <h4 className="mb-3">1-800-700-6200</h4>
                   <p>
-                    Get ALl time support for emergency.We have introduced the
-                    principle of family medicine.Get Conneted with us for any
-                    urgency .
+                    Hỗ trợ trực tuyến với đội ngũ y bác sĩ chuyên môn cao, nhiệt
+                    tình
                   </p>
                 </div>
               </div>
@@ -98,12 +96,12 @@ function TheBanner() {
             <div className="col-lg-4 col-sm-6">
               <div className="about-img">
                 <img
-                  src={"/front_end/public/images/about/img-1.jpg"}
+                  src="images/about/img-1.jpg"
                   alt=""
                   className="img-fluid"
                 />
                 <img
-                  src={"/front_end/public/images/about/img-2.jpg"}
+                  src="images/about/img-2.jpg"
                   alt=""
                   className="img-fluid mt-4"
                 />
@@ -112,7 +110,7 @@ function TheBanner() {
             <div className="col-lg-4 col-sm-6">
               <div className="about-img mt-4 mt-lg-0">
                 <img
-                  src={"/front_end/public/images/about/img-3.jpg"}
+                  src="images/about/img-3.jpg"
                   alt=""
                   className="img-fluid"
                 />
@@ -121,19 +119,19 @@ function TheBanner() {
             <div className="col-lg-4">
               <div className="about-content pl-4 mt-4 mt-lg-0">
                 <h2 className="title-color">
-                  Personal care <br />& healthy living
+                  Chăm sóc răng miệng <br />& Sống khỏe mạnh
                 </h2>
                 <p className="mt-4 mb-5">
-                  We provide best leading medicle service Nulla perferendis
-                  veniam deleniti ipsum officia dolores repellat laudantium
-                  obcaecati neque.
+                  Chúng tôi cung cấp dịch vụ nha khoa tốt nhất. Không ai nên
+                  chịu đựng những nỗi đau về răng miệng, hãy đến với chúng tôi
+                  để được đội ngũ y bác sĩ hàng đầu tư vấn
                 </p>
 
                 <a
                   href="service.html"
                   className="btn btn-main-2 btn-round-full btn-icon"
                 >
-                  Services<i className="icofont-simple-right ml-3"></i>
+                  Dịch vụ<i className="icofont-simple-right ml-3"></i>
                 </a>
               </div>
             </div>
@@ -150,7 +148,7 @@ function TheBanner() {
                   <span className="h3 counter" data-count="58">
                     0
                   </span>
-                  k<p>Happy People</p>
+                  k<p>Bệnh nhân hài lòng</p>
                 </div>
               </div>
               <div className="col-lg-3 col-md-6 col-sm-6">
@@ -159,7 +157,7 @@ function TheBanner() {
                   <span className="h3 counter" data-count="700">
                     0
                   </span>
-                  +<p>Surgery Comepleted</p>
+                  +<p>Lượt đề xuất</p>
                 </div>
               </div>
 
@@ -169,7 +167,7 @@ function TheBanner() {
                   <span className="h3 counter" data-count="40">
                     0
                   </span>
-                  +<p>Expert Doctors</p>
+                  +<p>Bác sĩ kinh nghiệm</p>
                 </div>
               </div>
               <div className="col-lg-3 col-md-6 col-sm-6">
@@ -178,7 +176,7 @@ function TheBanner() {
                   <span className="h3 counter" data-count="20">
                     0
                   </span>
-                  <p>Worldwide Branch</p>
+                  <p>Thương hiệu hợp tác</p>
                 </div>
               </div>
             </div>
@@ -204,13 +202,12 @@ function TheBanner() {
                 </div>
               </div>
             </div>
-            <div className="col-lg-6 col-md-10 ">
-              <div className="appoinment-wrap mt-5 mt-lg-0">
-                <h2 className="mb-2 title-color">Book appoinment</h2>
+
+            <div className="col-lg-6">
+              <div className="appoinment-wrap mt-5 mt-lg-0 pl-lg-5">
+                <h2 className="mb-2 title-color">Đặt lịch online</h2>
                 <p className="mb-4">
-                  Mollitia dicta commodi est recusandae iste, natus eum
-                  asperiores corrupti qui velit . Iste dolorum atque similique
-                  praesentium soluta.
+                  Vui lòng cung cấp thông tin để phòng khám hỗ trợ đặt lịch trực tuyến
                 </p>
                 <form
                   id="#"
@@ -220,12 +217,16 @@ function TheBanner() {
                 >
                   <div className="row">
                     <div className="col-lg-6">
+                      <label className="form-label">
+                        Chọn phòng khám
+                        <span className="required">*</span>
+                      </label>
                       <div className="form-group">
                         <select
                           className="form-control"
                           id="exampleFormControlSelect1"
                         >
-                          <option>Choose Department</option>
+                          <option>Phòng khám 1</option>
                           <option>Software Design</option>
                           <option>Development cycle</option>
                           <option>Software Development</option>
@@ -237,12 +238,15 @@ function TheBanner() {
                       </div>
                     </div>
                     <div className="col-lg-6">
+                    <label className="form-label">
+                         Bác sĩ chỉ định
+                      </label>
                       <div className="form-group">
                         <select
                           className="form-control"
                           id="exampleFormControlSelect2"
                         >
-                          <option>Select Doctors</option>
+                          <option>Bác sĩ 1</option>
                           <option>Software Design</option>
                           <option>Development cycle</option>
                           <option>Software Development</option>
@@ -255,6 +259,10 @@ function TheBanner() {
                     </div>
 
                     <div className="col-lg-6">
+                    <label className="form-label">
+                        Ngày khám
+                        <span className="required">*</span>
+                      </label>
                       <div className="form-group">
                         <input
                           name="date"
@@ -265,77 +273,127 @@ function TheBanner() {
                         />
                       </div>
                     </div>
-
+                    
                     <div className="col-lg-6">
+                    <label className="form-label">
+                        Chọn ca khám
+                        <span className="required">*</span>
+                      </label>
                       <div className="form-group">
-                        <input
-                          name="time"
-                          id="time"
-                          type="text"
+                      <select
                           className="form-control"
-                          placeholder="Time"
-                        />
+                          id="cakham"
+                        >
+                          <option>Từ 7h-9h :AM</option>
+                        </select>
                       </div>
                     </div>
                     <div className="col-lg-6">
+                    <label className="form-label">
+                        Tên bệnh nhân
+                        <span className="required">*</span>
+                      </label>
                       <div className="form-group">
                         <input
                           name="name"
                           id="name"
                           type="text"
                           className="form-control"
-                          placeholder="Full Name"
+                          placeholder="Họ và tên"
                         />
                       </div>
                     </div>
 
                     <div className="col-lg-6">
+                    <label className="form-label">
+                        Số điện thoại
+                        <span className="required">*</span>
+                      </label>
                       <div className="form-group">
                         <input
                           name="phone"
                           id="phone"
                           type="Number"
                           className="form-control"
-                          placeholder="Phone Number"
+                          placeholder="09xxxxxxx"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-lg-6">
+                    <label className="form-label">
+                        Tuổi
+                        <span className="required">*</span>
+                      </label>
+                      <div className="form-group">
+                        <input
+                          name="phone"
+                          id="phone"
+                          type="Number"
+                          className="form-control"
+                          placeholder="Tuổi"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-lg-6">
+                    <label className="form-label">
+                        Giới tính
+                        <span className="required">*</span>
+                      </label>
+                      <div className="form-group">
+                        <input
+                          name="phone"
+                          id="phone"
+                          type=""
+                          className="form-control"
+                          placeholder="Giới tính"
                         />
                       </div>
                     </div>
                   </div>
                   <div className="form-group-2 mb-4">
+                  <label className="form-label">
+                        Mô tả triệu chứng
+                        <span className="required">*</span>
+                      </label>
                     <textarea
                       name="message"
                       id="message"
                       className="form-control"
                       rows={6}
-                      placeholder="Your Message"
+                      placeholder="Đau/nhức răng..."
                     ></textarea>
                   </div>
 
                   <a
                     className="btn btn-main btn-round-full"
-                    href="appoinment.html"
+                    href="confirmation.html"
                   >
-                    Make Appoinment{" "}
-                    <i className="icofont-simple-right ml-2  "></i>
+                    Đặt lịch ngay<i className="icofont-simple-right ml-2"></i>
                   </a>
                 </form>
               </div>
             </div>
+
+
+            
+          
           </div>
         </div>
       </section>
+
+
+
+
+      
       <section className="section testimonial-2 gray-bg">
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-lg-7">
               <div className="section-title text-center">
-                <h2>We served over 5000+ Patients</h2>
+                <h2>Các chuyên gia hàng đầu về nha khoa</h2>
                 <div className="divider mx-auto my-4"></div>
-                <p>
-                  Lets know moreel necessitatibus dolor asperiores illum
-                  possimus sint voluptates incidunt molestias nostrum
-                  laudantium. Maiores porro cumque quaerat.
-                </p>
               </div>
             </div>
           </div>
@@ -356,12 +414,10 @@ function TheBanner() {
                 </div>
 
                 <div className="client-info ">
-                  <h4>Amazing service!</h4>
-                  <span>John Partho</span>
+                  <h4>Dr.Nguyễn Văn A</h4>
+                  <span>Dịch vụ thẩm mỹ</span>
                   <p>
-                    They provide great service facilty consectetur adipisicing
-                    elit. Itaque rem, praesentium, iure, ipsum magnam deleniti a
-                    vel eos adipisci suscipit fugit placeat.
+                    Chuyên gia trong lĩnh vực nha khoa thẩm mỹ, nhiều năm công tác tại bệnh viện ABC và là phó khoa khoa răng hàm mặt.
                   </p>
                 </div>
               </div>
@@ -376,81 +432,18 @@ function TheBanner() {
                 </div>
 
                 <div className="client-info">
-                  <h4>Expert doctors!</h4>
-                  <span>Mullar Sarth</span>
+                  <h4>Dr. Tran Thi B</h4>
+                  <span>Dịch vụ nhổ răng</span>
                   <p>
-                    They provide great service facilty consectetur adipisicing
-                    elit. Itaque rem, praesentium, iure, ipsum magnam deleniti a
-                    vel eos adipisci suscipit fugit placeat.
+                    Nhiều năm kinh nghiệm về các ca bệnh về răng, đạt nhiều giải thưởng, vinh danh về giải pháp nhổ răng khôn
                   </p>
                 </div>
 
                 <i className="icofont-quote-right"></i>
               </div>
 
-              <div className="testimonial-block style-2  gray-bg">
-                <div className="testimonial-thumb">
-                  <img
-                    src="images/team/test-thumb3.jpg"
-                    alt=""
-                    className="img-fluid"
-                  />
-                </div>
-
-                <div className="client-info">
-                  <h4>Good Support!</h4>
-                  <span>Kolis Mullar</span>
-                  <p>
-                    They provide great service facilty consectetur adipisicing
-                    elit. Itaque rem, praesentium, iure, ipsum magnam deleniti a
-                    vel eos adipisci suscipit fugit placeat.
-                  </p>
-                </div>
-
-                <i className="icofont-quote-right"></i>
-              </div>
-
-              <div className="testimonial-block style-2  gray-bg">
-                <div className="testimonial-thumb">
-                  <img
-                    src="images/team/test-thumb4.jpg"
-                    alt=""
-                    className="img-fluid"
-                  />
-                </div>
-
-                <div className="client-info">
-                  <h4>Nice Environment!</h4>
-                  <span>Partho Sarothi</span>
-                  <p className="mt-4">
-                    They provide great service facilty consectetur adipisicing
-                    elit. Itaque rem, praesentium, iure, ipsum magnam deleniti a
-                    vel eos adipisci suscipit fugit placeat.
-                  </p>
-                </div>
-                <i className="icofont-quote-right"></i>
-              </div>
-
-              <div className="testimonial-block style-2  gray-bg">
-                <div className="testimonial-thumb">
-                  <img
-                    src="images/team/test-thumb1.jpg"
-                    alt=""
-                    className="img-fluid"
-                  />
-                </div>
-
-                <div className="client-info">
-                  <h4>Modern Service!</h4>
-                  <span>Kolis Mullar</span>
-                  <p>
-                    They provide great service facilty consectetur adipisicing
-                    elit. Itaque rem, praesentium, iure, ipsum magnam deleniti a
-                    vel eos adipisci suscipit fugit placeat.
-                  </p>
-                </div>
-                <i className="icofont-quote-right"></i>
-              </div>
+           
+             
             </div>
           </div>
         </div>
@@ -460,12 +453,10 @@ function TheBanner() {
           <div className="row justify-content-center">
             <div className="col-lg-7">
               <div className="section-title text-center">
-                <h2>Partners who support us</h2>
+                <h2>Đối tác</h2>
                 <div className="divider mx-auto my-4"></div>
                 <p>
-                  Lets know moreel necessitatibus dolor asperiores illum
-                  possimus sint voluptates incidunt molestias nostrum
-                  laudantium. Maiores porro cumque quaerat.
+                  Không những trong nước, chúng tôi còn hợp tác với nhiều bệnh viện chuyên răng hàm ở quốc tế. Đội ngũ y bác sĩ quốc tế và các phương pháp, dụng cụ y tế sẽ đáp ứng nhu cầu bệnh nhân
                 </p>
               </div>
             </div>
