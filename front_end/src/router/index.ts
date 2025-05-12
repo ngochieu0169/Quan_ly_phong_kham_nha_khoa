@@ -1,5 +1,7 @@
 // import { ALBUMS, TOPALBUMS } from "../constants";
 
+import AccountManager from "../views/admin/accountManagerPage";
+import ClinicManagerPage from "../views/admin/clinicManagerPage";
 import LoginPage from "../views/auth/login";
 import PersonalPage from "../views/auth/personal";
 import RegisterPage from "../views/auth/register";
@@ -27,6 +29,7 @@ const publicRoutes = [
     component: RegisterPage,
   },
 
+
   // {
   //   name: "album_detail",
   //   path: "/album/:id",
@@ -39,6 +42,16 @@ const privateRoutes = [
   {
     path: "/user",
     component: PersonalPage
+  },
+  {
+    name: "clinic",
+    path: "/clinic",
+    component: ClinicManagerPage,
+  },
+  {
+    name: "account",
+    path: "/account",
+    component: AccountManager,
   },
 
   // {

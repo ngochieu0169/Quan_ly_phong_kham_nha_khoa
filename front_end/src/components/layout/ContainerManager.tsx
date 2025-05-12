@@ -1,16 +1,16 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-function ContainerManager() {
+function ContainerManager({ children }: any) {
   const location = useLocation();
 
   const menuItems = [
     { path: "/admin/dashboard", label: "Tổng quan" },
-    { path: "/admin/phong-kham", label: "Quản lý phòng khám" },
-    { path: "/admin/tai-khoan", label: "Quản lý tài khoản" },
-    { path: "/admin/ca-kham", label: "Quản lý ca khám" },
-    { path: "/admin/lich-kham", label: "Quản lý lịch khám" },
-    { path: "/admin/hoa-don", label: "Quản lý hóa đơn" },
-    { path: "/admin/dich-vu", label: "Quản lý dịch vụ" },
+    { path: "/clinic", label: "Quản lý phòng khám" },
+    { path: "/account", label: "Quản lý tài khoản" },
+    { path: "/shift", label: "Quản lý ca khám" },
+    { path: "/schedule", label: "Quản lý lịch khám" },
+    { path: "/bill", label: "Quản lý hóa đơn" },
+    { path: "/service", label: "Quản lý dịch vụ" },
     { path: "/", label: "Đăng xuất" },
   ];
 
@@ -40,7 +40,8 @@ function ContainerManager() {
       {/* Main content */}
       <div className="main-content flex-grow-1 p-4 bg-light">
         <div className="content-wrapper card shadow-sm p-4">
-          <Outlet />
+          {/* <Outlet /> */}
+          <div>{children}</div>
         </div>
       </div>
     </div>
