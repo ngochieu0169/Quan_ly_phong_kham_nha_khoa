@@ -84,8 +84,8 @@ function RegisterPage() {
 
   return (
     <div
-      className="d-flex justify-content-center align-items-center"
-      style={{ height: "80vh" }}
+      className="d-flex justify-content-center align-items-center pt-3 pb-5"
+      
     >
       <div className="card shadow" style={{ width: "100%", maxWidth: 600 }}>
         <div className="card-body">

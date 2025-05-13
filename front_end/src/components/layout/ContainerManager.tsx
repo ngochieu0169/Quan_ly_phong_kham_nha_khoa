@@ -1,9 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
 
-function ContainerManager({ children }: any) {
+interface ContainerManagerProps {
+  role: "admin" | "doctor" | "patient";
+  children: React.ReactNode;
+}
+
+function ContainerManager({ role = 'doctor', children }: ContainerManagerProps) {
   const location = useLocation();
 
-  const menuItems = [
+  const adminMenu = [
     { path: "/admin/dashboard", label: "Tổng quan" },
     { path: "/clinic", label: "Quản lý phòng khám" },
     { path: "/account", label: "Quản lý tài khoản" },
@@ -13,6 +18,28 @@ function ContainerManager({ children }: any) {
     { path: "/service", label: "Quản lý dịch vụ" },
     { path: "/", label: "Đăng xuất" },
   ];
+
+  const doctorMenu = [
+    { path: "/doctor/profile", label: "Thông tin tài khoản" },
+    { path: "/doctor/regis-shift", label: "Đăng ký ca khám" },
+    { path: "/doctor/my-shifts", label: "Ca khám của tôi" },
+    { path: "/notification", label: "Thông báo" },
+    { path: "/doctor/patients", label: "Bệnh nhân của tôi" },
+    { path: "/", label: "Đăng xuất" },
+  ];
+
+  const patientMenu = [
+    { path: "/patient/profile", label: "Thông tin tài khoản" },
+    { path: "/patient/appointments", label: "Lịch khám của tôi" },
+    { path: "/patient/bills", label: "Hóa đơn" },
+    { path: "/notification", label: "Thông báo" },
+    { path: "/", label: "Đăng xuất" },
+  ];
+
+  let menuItems = adminMenu; // default
+
+  if (role === "doctor") menuItems = doctorMenu;
+  else if (role === "patient") menuItems = patientMenu;
 
   return (
     <div className="admin-layout d-flex">
@@ -40,7 +67,6 @@ function ContainerManager({ children }: any) {
       {/* Main content */}
       <div className="main-content flex-grow-1 p-4 bg-light">
         <div className="content-wrapper card shadow-sm p-4">
-          {/* <Outlet /> */}
           <div>{children}</div>
         </div>
       </div>

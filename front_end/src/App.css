@@ -47,3 +47,28 @@
   background-color: var(--main-color-dark);
   font-weight: bold;
 }
+
+.doctor-schedule-container {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.button-custom {
+  border: none;
+  background-color: white;
+}
+
+.schedule {
+  /* color: black !important; */
+}
+
+.rbc-day-slot .rbc-event {
+  display: flex;
+  flex-wrap: nowrap !important;
+}
+
+.rbc-day-slot .rbc-event:hover {
+  background-color: #1a2f55;
+  transition: 0.3s;
+}
