@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function TheBanner() {
   return (
     <div>
@@ -17,14 +19,12 @@ function TheBanner() {
                   cung cấp dịch vụ nha khoa tốt nhất đến mọi người
                 </p>
                 <div className="btn-container ">
-                  <a
-                    href="appoinment.html"
-                    target="_blank"
-                    className="btn btn-main-2 btn-icon btn-round-full"
-                  >
-                    Đặt lịch khám ngay
-                    <i className="icofont-simple-right ml-2  "></i>
-                  </a>
+                  <Link to="/booking">
+                    <a className="btn btn-main-2 btn-icon btn-round-full">
+                      Đặt lịch khám ngay
+                      <i className="icofont-simple-right ml-2  "></i>
+                    </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -207,7 +207,8 @@ function TheBanner() {
               <div className="appoinment-wrap mt-5 mt-lg-0 pl-lg-5">
                 <h2 className="mb-2 title-color">Đặt lịch online</h2>
                 <p className="mb-4">
-                  Vui lòng cung cấp thông tin để phòng khám hỗ trợ đặt lịch trực tuyến
+                  Vui lòng cung cấp thông tin để phòng khám hỗ trợ đặt lịch trực
+                  tuyến
                 </p>
                 <form
                   id="#"
@@ -238,9 +239,7 @@ function TheBanner() {
                       </div>
                     </div>
                     <div className="col-lg-6">
-                    <label className="form-label">
-                         Bác sĩ chỉ định
-                      </label>
+                      <label className="form-label">Bác sĩ chỉ định</label>
                       <div className="form-group">
                         <select
                           className="form-control"
@@ -259,7 +258,7 @@ function TheBanner() {
                     </div>
 
                     <div className="col-lg-6">
-                    <label className="form-label">
+                      <label className="form-label">
                         Ngày khám
                         <span className="required">*</span>
                       </label>
@@ -273,23 +272,20 @@ function TheBanner() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="col-lg-6">
-                    <label className="form-label">
+                      <label className="form-label">
                         Chọn ca khám
                         <span className="required">*</span>
                       </label>
                       <div className="form-group">
-                      <select
-                          className="form-control"
-                          id="cakham"
-                        >
+                        <select className="form-control" id="cakham">
                           <option>Từ 7h-9h :AM</option>
                         </select>
                       </div>
                     </div>
                     <div className="col-lg-6">
-                    <label className="form-label">
+                      <label className="form-label">
                         Tên bệnh nhân
                         <span className="required">*</span>
                       </label>
@@ -305,7 +301,7 @@ function TheBanner() {
                     </div>
 
                     <div className="col-lg-6">
-                    <label className="form-label">
+                      <label className="form-label">
                         Số điện thoại
                         <span className="required">*</span>
                       </label>
@@ -321,7 +317,7 @@ function TheBanner() {
                     </div>
 
                     <div className="col-lg-6">
-                    <label className="form-label">
+                      <label className="form-label">
                         Tuổi
                         <span className="required">*</span>
                       </label>
@@ -337,7 +333,7 @@ function TheBanner() {
                     </div>
 
                     <div className="col-lg-6">
-                    <label className="form-label">
+                      <label className="form-label">
                         Giới tính
                         <span className="required">*</span>
                       </label>
@@ -353,10 +349,10 @@ function TheBanner() {
                     </div>
                   </div>
                   <div className="form-group-2 mb-4">
-                  <label className="form-label">
-                        Mô tả triệu chứng
-                        <span className="required">*</span>
-                      </label>
+                    <label className="form-label">
+                      Mô tả triệu chứng
+                      <span className="required">*</span>
+                    </label>
                     <textarea
                       name="message"
                       id="message"
@@ -375,18 +371,10 @@ function TheBanner() {
                 </form>
               </div>
             </div>
-
-
-            
-          
           </div>
         </div>
       </section>
 
-
-
-
-      
       <section className="section testimonial-2 gray-bg">
         <div className="container">
           <div className="row justify-content-center">
@@ -417,7 +405,8 @@ function TheBanner() {
                   <h4>Dr.Nguyễn Văn A</h4>
                   <span>Dịch vụ thẩm mỹ</span>
                   <p>
-                    Chuyên gia trong lĩnh vực nha khoa thẩm mỹ, nhiều năm công tác tại bệnh viện ABC và là phó khoa khoa răng hàm mặt.
+                    Chuyên gia trong lĩnh vực nha khoa thẩm mỹ và là phó khoa
+                    khoa răng hàm mặt tại bệnh viện ABC .
                   </p>
                 </div>
               </div>
@@ -435,15 +424,13 @@ function TheBanner() {
                   <h4>Dr. Tran Thi B</h4>
                   <span>Dịch vụ nhổ răng</span>
                   <p>
-                    Nhiều năm kinh nghiệm về các ca bệnh về răng, đạt nhiều giải thưởng, vinh danh về giải pháp nhổ răng khôn
+                    Nhiều năm kinh nghiệm về các ca bệnh về răng, đạt nhiều giải
+                    thưởng, vinh danh về giải pháp nhổ răng khôn
                   </p>
                 </div>
 
                 <i className="icofont-quote-right"></i>
               </div>
-
-           
-             
             </div>
           </div>
         </div>
@@ -456,7 +443,9 @@ function TheBanner() {
                 <h2>Đối tác</h2>
                 <div className="divider mx-auto my-4"></div>
                 <p>
-                  Không những trong nước, chúng tôi còn hợp tác với nhiều bệnh viện chuyên răng hàm ở quốc tế. Đội ngũ y bác sĩ quốc tế và các phương pháp, dụng cụ y tế sẽ đáp ứng nhu cầu bệnh nhân
+                  Không những trong nước, chúng tôi còn hợp tác với nhiều bệnh
+                  viện chuyên răng hàm ở quốc tế. Đội ngũ y bác sĩ quốc tế và
+                  các phương pháp, dụng cụ y tế sẽ đáp ứng nhu cầu bệnh nhân
                 </p>
               </div>
             </div>
