@@ -4,25 +4,51 @@ const path = require('path');
 const fs = require('fs');
 
 exports.register = (req, res) => {
-  const { hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, tenTaiKhoan, matKhau, maQuyen } = req.body;
-  const anh = req.file?.filename;
+  const {
+    tenTaiKhoan,
+    matKhau,
+    maQuyen,
+    hoTen,
+    ngaySinh,
+    gioiTinh,
+    eMail,
+    soDienThoai,
+    diaChi,
+  } = req.body;
 
-  const insertUser = `INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh)
-                      VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  const file = req.file;
+  const anh = file ? file.filename : null;
 
-  db.query(insertUser, [hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh], (err, result) => {
-    if (err) return res.status(500).json({ error: err });
+  const sql1 = `
+    INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
 
-    const maNguoiDung = result.insertId;
-    const insertAccount = `INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung)
-                           VALUES (?, ?, ?, ?)`;
+  db.query(
+    sql1,
+    [hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err });
 
-    db.query(insertAccount, [tenTaiKhoan, matKhau, maQuyen, maNguoiDung], (err2) => {
-      if (err2) return res.status(500).json({ error: err2 });
-      res.json({ message: 'Đăng ký thành công' });
-    });
-  });
+      const maNguoiDung = result.insertId;
+      const sql2 = `
+        INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung)
+        VALUES (?, ?, ?, ?)
+      `;
+
+      db.query(
+        sql2,
+        [tenTaiKhoan, matKhau, maQuyen, maNguoiDung],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: err2 });
+          res.json({ message: "Đăng ký tài khoản thành công" });
+        }
+      );
+    }
+  );
 };
+
+
 
 exports.loginUser = (req, res) => {
   const { tenTaiKhoan, matKhau } = req.body;
@@ -73,28 +99,32 @@ exports.loginUser = (req, res) => {
   });
 };
 
-
-exports.editUser = (req, res) => {
-  const maNguoiDung = req.params.id;
+exports.updateNguoiDung = (req, res) => {
   const { hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi } = req.body;
-  const anh = req.file?.filename;
+  const file = req.file;
+  const anh = file ? file.filename : null;
 
-  let query = `UPDATE NGUOIDUNG SET hoTen=?, ngaySinh=?, gioiTinh=?, eMail=?, soDienThoai=?, diaChi=?`;
-  const values = [hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi];
+  let sql = `
+    UPDATE NGUOIDUNG
+    SET hoTen = ?, ngaySinh = ?, gioiTinh = ?, eMail = ?, soDienThoai = ?, diaChi = ?
+  `;
+
+  const params = [hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi];
 
   if (anh) {
-    query += `, anh=?`;
-    values.push(anh);
+    sql += `, anh = ?`;
+    params.push(anh);
   }
 
-  query += ` WHERE maNguoiDung=?`;
-  values.push(maNguoiDung);
+  sql += ` WHERE maNguoiDung = ?`;
+  params.push(req.params.maNguoiDung);
 
-  db.query(query, values, (err) => {
+  db.query(sql, params, (err) => {
     if (err) return res.status(500).json({ error: err });
-    res.json({ message: 'Cập nhật thành công' });
+    res.json({ message: "Cập nhật thông tin người dùng thành công" });
   });
 };
+
 
 exports.deleteUser = (req, res) => {
   const maNguoiDung = req.params.id;
