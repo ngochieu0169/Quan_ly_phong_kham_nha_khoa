@@ -3,10 +3,20 @@ Dự án Quản lý phòng khám nha khoa
 cách khởi động
 
 Front-end:
-npm run dev
+Vào thư mục front_end -> mở terminal ->
 
+Lệnh cài thư viện: npm i 
 
-đặt cho ngừoi thân
+Lệnh khởi động: npm run dev
 
-giao diện khi chọn bác sĩ thì sẽ hiển thị danh sách lịch làm việc của bác sĩ để chọn cho trực quan
+Back-end:
+Vào thư mục back_end -> mở terminal ->
 
+Lệnh cài thư viện: npm i 
+
+Lệnh khởi động: npm run dev
+
+* Chức năng:
+
+1. Đăng nhập: 
+- userRoutes.js, userController.js
