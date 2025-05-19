@@ -1,23 +1,38 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { updateUser } from "../../../store/user";
+
+interface LoginResponse {
+  message: string;
+  user: {
+    tenTaiKhoan: string;
+    maQuyen: number;
+    tenQuyen: string;
+    maNguoiDung: number;
+    hoTen: string;
+    ngaySinh: string;
+    gioiTinh: string;
+    eMail: string;
+    soDienThoai: string;
+    diaChi: string;
+    anh: string;
+  };
+}
 
 function LoginPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ name: "", password: "" });
+  const [errors, setErrors] = useState({ name: "", password: "" });
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [errors, setErrors] = useState({
-    name: "",
-    password: "",
-  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = { name: "", password: "" };
     let valid = true;
@@ -30,12 +45,39 @@ function LoginPage() {
       newErrors.password = "Mật khẩu không được để trống.";
       valid = false;
     }
-
     setErrors(newErrors);
+    if (!valid) return;
 
-    if (valid) {
-      console.log("Đăng nhập với:", formData);
-      // TODO: Gửi dữ liệu tới backend
+    try {
+      const res = await fetch("http://localhost:3000/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenTaiKhoan: formData.name,
+          matKhau: formData.password,
+        }),
+      });
+      const data: LoginResponse = await res.json();
+
+      if (res.ok) {
+        console.log('user: ', data.user)
+        // Lưu thông tin user (toàn bộ object) vào localStorage
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        dispatch(updateUser(data.user));
+
+        // Điều hướng theo quyền
+        if (data.user.maQuyen === 4) {
+          navigate("/");
+        } else {
+          navigate("/user");
+        }
+      } else {
+        alert(data.message || "Đăng nhập thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi kết nối đến server");
     }
   };
 
@@ -51,7 +93,7 @@ function LoginPage() {
             <div className="row">
               <div className="col-12 mb-3">
                 <label className="form-label">
-                  Tên bệnh nhân <span className="required">*</span>
+                  Tài khoản <span className="required">*</span>
                 </label>
                 <div className="form-group">
                   <input
@@ -59,7 +101,7 @@ function LoginPage() {
                     id="name"
                     type="text"
                     className="form-control"
-                    placeholder="Họ và tên"
+                    placeholder="Tài khoản"
                     value={formData.name}
                     onChange={handleChange}
                   />
@@ -95,16 +137,12 @@ function LoginPage() {
                 </button>
               </div>
 
-              <div className="col-12 mt-3">
-              <div className="text-center mt-3">
+              <div className="col-12 mt-3 text-center">
                 <span>Bạn chưa có tài khoản? </span>
                 <Link to="/register" className="text-primary fw-bold">
                   Đăng ký tại đây
                 </Link>
               </div>
-              </div>
-
-              
             </div>
           </form>
         </div>
