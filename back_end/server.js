@@ -1,10 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const quyenRoutes = require('./src/routers/quyenRoutes');
-const userRoutes = require('./src/routers/userRoutes');
 const bodyParser = require('body-parser');
 const path = require('path');
+
+
+const quyenRoutes = require('./src/routers/quyenRoutes');
+const userRoutes = require('./src/routers/userRoutes');
+const phongKhamRoutes = require('./src/routers/phongKhamRoutes');
+const nhaSiRoutes = require('./src/routers/nhaSiRoutes');
+const danhGia = require('./src/routers/danhGiaRoutes');
+const loaiDichVu = require('./src/routers/loaiDichVuRoutes');
+const dichVu = require('./src/routers/dichVuRoutes');
+const caKham = require('./src/routers/caKhamRoutes');
+const phieuKham = require('./src/routers/phieuKhamRoutes');
+const lichKham = require('./src/routers/lichKhamRoutes');
+const thongBao = require('./src/routers/thongBaoRoutes');
+const chiTietPhieuKham = require('./src/routers/chiTietPhieuKhamRoutes');
+const hoaDon = require('./src/routers/hoaDonRoutes');
+
+
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +45,28 @@ app.use('/api', routes);
 app.use('/api/quyen', quyenRoutes);
 // user
 app.use('/api/users', userRoutes);
+
+app.use('/api/phongkham', phongKhamRoutes);
+
+app.use('/api/nhasi', nhaSiRoutes);
+
+app.use('/api/danhgia', danhGia);
+
+app.use('/api/loaidichvu', loaiDichVu);
+
+app.use('/api/dichvu', dichVu);
+
+app.use('/api/cakham', caKham);
+
+app.use('/api/phieukham', phieuKham);
+
+app.use('/api/lichkham', lichKham);
+
+app.use('/api/chitietphieukham', chiTietPhieuKham);
+
+app.use('/api/hoadon', hoaDon);
+
+app.use('/api/thongbao', thongBao);
 
 
 
