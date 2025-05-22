@@ -140,7 +140,7 @@ const TheHeader: React.FC = () => {
                   <Link className="nav-link dropdown-toggle" to="#" data-toggle="dropdown">
                     Cá nhân <i className="icofont-thin-down" />
                   </Link>
-                  <ul className="dropdown-menu">
+                  <ul className="dropdown-menu p-2">
                     <li>
                       <Link className="dropdown-item" to="/profile">Hồ sơ</Link>
                     </li>
@@ -148,13 +148,9 @@ const TheHeader: React.FC = () => {
                       <Link className="dropdown-item" to="/my-appointments">Lịch đã đặt</Link>
                     </li>
                     <li>
-                      <button
-                        className="dropdown-item btn btn-link p-0 text-left"
-                        onClick={handleLogout}
-                      >
-                        Đăng xuất
-                      </button>
+                      <a className="dropdown-item" href='#' onClick={handleLogout} >Đăng xuất</a>
                     </li>
+           
                   </ul>
                 </li>
               )}

@@ -154,7 +154,9 @@ INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (1, N'Quản trị viên');
 INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (2, N'Bác sĩ');
 INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (3, N'Lễ tân');
 INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (4, N'Bệnh nhân');
-INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (5, N'Khách');
+INSERT INTO QUYEN (maQuyen, tenQuyen) VALUES (5, N'Chủ phòng khám');
+
+
 
 -- NGUOIDUNG
 INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh) VALUES 
@@ -170,6 +172,10 @@ INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, an
 (N'Hoàng Văn Em', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12'),
 (N'Hoàng Văn Linh', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12');
 
+-- INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh) VALUES 
+-- (N'Nguyễn Hoàng Phúc', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12');
+
+select * from NGUOIDUNG
 -- TAIKHOAN
 INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES 
 ('admin', '123456', 1, 1),
@@ -181,6 +187,9 @@ INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES
 ('letan1', '123456', 3, 10),
 ('benhnhan1', '123456', 4, 4),
 ('benhnhan2', '123456', 4, 5);
+
+-- INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES 
+-- ('chuphongkham', '123456', 5, 12);
 
 -- PHONGKHAM
 INSERT INTO PHONGKHAM (tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai) VALUES 

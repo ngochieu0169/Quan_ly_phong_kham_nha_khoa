@@ -44,7 +44,7 @@
 }
 
 .nav-link.active {
-  background-color: var(--main-color-dark);
+  background-color: white;
   font-weight: bold;
 }
 

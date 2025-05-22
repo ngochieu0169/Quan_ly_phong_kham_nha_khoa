@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { updateUser } from "../../../store/user";
 
 interface LoginResponse {
@@ -67,11 +67,25 @@ function LoginPage() {
         dispatch(updateUser(data.user));
 
         // Điều hướng theo quyền
-        if (data.user.maQuyen === 4) {
-          navigate("/");
-        } else {
-          navigate("/user");
+        switch(data.user.maQuyen) {
+          case 1:
+            navigate("/admin");
+            break;
+          case 2:
+            navigate("/doctor/profile");
+            break;
+          case 3:
+            navigate("/le-tan");
+            break;
+          case 4:
+            navigate("/");
+            break;
+          case 5:
+            navigate("/phong-kham");
+            break;
+          default:
         }
+        
       } else {
         alert(data.message || "Đăng nhập thất bại");
       }

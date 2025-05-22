@@ -24,7 +24,16 @@ exports.getById = (req, res) => {
 
 // Tạo mới phòng khám
 exports.create = (req, res) => {
-  const { tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai } = req.body;
+  const {
+    tenPhongKham,
+    diaChi,
+    soDienThoai,
+    gioLamViec,
+    maChuPhongKham,
+    // nếu không truyền trangthai, mặc định 'chưa duyệt'
+    trangthai = 'chưa duyệt',
+  } = req.body;
+
   const sql = `
     INSERT INTO PHONGKHAM
       (tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai)
@@ -46,24 +55,35 @@ exports.create = (req, res) => {
 // Cập nhật phòng khám
 exports.update = (req, res) => {
   const { id } = req.params;
-  const { tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai } = req.body;
+  const fields = ['tenPhongKham','diaChi','soDienThoai','gioLamViec','maChuPhongKham','trangthai'];
+  const sets = [];
+  const values= [];
+
+  fields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      sets.push(`${field} = ?`);
+      values.push(req.body[field]);
+    }
+  });
+
+  if (sets.length === 0) {
+    return res.status(400).json({ message: 'Không có trường nào để cập nhật' });
+  }
+
   const sql = `
     UPDATE PHONGKHAM
-    SET tenPhongKham = ?, diaChi = ?, soDienThoai = ?, gioLamViec = ?, maChuPhongKham = ?, trangthai = ?
+    SET ${sets.join(', ')}
     WHERE maPhongKham = ?
   `;
-  db.query(
-    sql,
-    [tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhongKham, trangthai, id],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (result.affectedRows === 0)
-        return res.status(404).json({ message: 'Không tìm thấy phòng khám' });
-      res.json({ message: 'Cập nhật phòng khám thành công' });
-    }
-  );
-};
+  values.push(id);
 
+  db.query(sql, values, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: 'Không tìm thấy phòng khám' });
+    res.json({ message: 'Cập nhật phòng khám thành công' });
+  });
+};
 // Xóa phòng khám
 exports.delete = (req, res) => {
   const { id } = req.params;

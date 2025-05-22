@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -24,6 +27,8 @@ function RegisterPage() {
     avatar: "",
   });
 
+  const navigate = useNavigate();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, files } = e.target as HTMLInputElement;
     if (name === "avatar" && files) {
@@ -34,7 +39,7 @@ function RegisterPage() {
     setErrors({ ...errors, [name]: "" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = {
       name: "",
@@ -46,7 +51,6 @@ function RegisterPage() {
       gender: "",
       avatar: "",
     };
-
     let valid = true;
 
     if (!formData.name) {
@@ -75,18 +79,40 @@ function RegisterPage() {
     }
 
     setErrors(newErrors);
+    if (!valid) return;
 
-    if (valid) {
-      console.log("Dữ liệu gửi đi:", formData);
-      // TODO: gửi đến API
+    // Chuẩn bị form dữ liệu multipart
+    const payload = new FormData();
+    payload.append("hoTen", formData.name);
+    payload.append("ngaySinh", new Date().toISOString().split("T")[0]); // hoặc lấy ngày sinh nếu có field
+    payload.append("gioiTinh", formData.gender);
+    payload.append("eMail", formData.email);
+    payload.append("soDienThoai", formData.phone);
+    payload.append("diaChi", formData.address);
+    payload.append("anh", formData.avatar!);
+
+    // Thông tin tài khoản
+    payload.append("tenTaiKhoan", formData.email);    // hoặc logic khác cho username
+    payload.append("matKhau", formData.password);
+    payload.append("maQuyen", "2"); // ví dụ mặc định 2 = bệnh nhân
+
+    try {
+      await axios.post(
+        "http://localhost:3000/api/users/register",
+        payload,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      toast.success("Đăng ký thành công! Đang chuyển đến trang đăng nhập...");
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (err) {
+      console.error(err);
+      toast.error("Đăng ký thất bại. Vui lòng thử lại.");
     }
   };
 
   return (
-    <div
-      className="d-flex justify-content-center align-items-center pt-3 pb-5"
-      
-    >
+    <div className="d-flex justify-content-center align-items-center pt-3 pb-5">
+      <ToastContainer />
       <div className="card shadow" style={{ width: "100%", maxWidth: 600 }}>
         <div className="card-body">
           <h4 className="mb-4 text-center">Đăng ký</h4>
@@ -196,29 +222,24 @@ function RegisterPage() {
               {/* Upload ảnh */}
               <div className="col-12 mb-3">
                 <label className="form-label">Ảnh đại diện <span className="required">*</span></label>
-                <div>
                 <input
                   type="file"
                   name="avatar"
-                  className=""
+                  className="form-control"
                   accept="image/*"
                   onChange={handleChange}
                 />
                 {errors.avatar && <small className="text-danger">{errors.avatar}</small>}
-                </div>
-               
               </div>
 
               <div className="col-12 mt-3">
                 <button type="submit" className="btn btn-primary w-100">Đăng ký</button>
               </div>
 
-              <div className="col-12 mt-3">
-              <div className="text-center mt-3">
+              <div className="col-12 mt-3 text-center">
                 <Link to="/login" className="text-primary fw-bold">
                   Về trang đăng nhập
                 </Link>
-              </div>
               </div>
             </div>
           </form>

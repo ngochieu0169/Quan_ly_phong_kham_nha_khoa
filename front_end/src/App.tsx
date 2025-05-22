@@ -3,6 +3,8 @@ import Container from "./components/layout/Container";
 import ContainerManager from "./components/layout/ContainerManager";
 import { publicRoutes, privateRoutes } from "./router";
 import NotFoundPage from "./views/errors";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   return (
@@ -42,7 +44,10 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />{" "}
         </Routes>
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
+
     </Router>
+
   );
 }
 
