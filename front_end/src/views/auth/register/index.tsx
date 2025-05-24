@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
+    tenTaiKhoan: "",
     email: "",
     phone: "",
     password: "",
@@ -18,6 +19,7 @@ function RegisterPage() {
 
   const [errors, setErrors] = useState({
     name: "",
+    tenTaiKhoan: "",
     email: "",
     phone: "",
     password: "",
@@ -44,6 +46,7 @@ function RegisterPage() {
     const newErrors = {
       name: "",
       email: "",
+      tenTaiKhoan: "",
       phone: "",
       password: "",
       confirmPassword: "",
@@ -55,6 +58,9 @@ function RegisterPage() {
 
     if (!formData.name) {
       newErrors.name = "Tên không được để trống."; valid = false;
+    }
+    if (!formData.tenTaiKhoan) {
+      newErrors.tenTaiKhoan = "Tên TK không được để trống."; valid = false;
     }
     if (!formData.email) {
       newErrors.email = "Email không được để trống."; valid = false;
@@ -92,9 +98,9 @@ function RegisterPage() {
     payload.append("anh", formData.avatar!);
 
     // Thông tin tài khoản
-    payload.append("tenTaiKhoan", formData.email);    // hoặc logic khác cho username
+    payload.append("tenTaiKhoan", formData.tenTaiKhoan);    // hoặc logic khác cho username
     payload.append("matKhau", formData.password);
-    payload.append("maQuyen", "2"); // ví dụ mặc định 2 = bệnh nhân
+    payload.append("maQuyen", import.meta.env.VITE_APP_RULE_USER); // ví dụ mặc định 4 = bệnh nhân
 
     try {
       await axios.post(
@@ -130,6 +136,19 @@ function RegisterPage() {
                   onChange={handleChange}
                 />
                 {errors.name && <small className="text-danger">{errors.name}</small>}
+              </div>
+              {/* Tên */}
+              <div className="col-12 mb-3">
+                <label className="form-label">Tên tài khoản <span className="required">*</span></label>
+                <input
+                  type="text"
+                  name="tenTaiKhoan"
+                  className="form-control"
+                  placeholder="Tên tài khoản"
+                  value={formData.tenTaiKhoan}
+                  onChange={handleChange}
+                />
+                {errors.tenTaiKhoan && <small className="text-danger">{errors.tenTaiKhoan}</small>}
               </div>
 
               {/* Email */}
