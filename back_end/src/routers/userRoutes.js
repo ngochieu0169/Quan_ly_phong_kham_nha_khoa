@@ -14,3 +14,4 @@ router.put('/account/:tenTaiKhoan', userController.updateAccount);
 router.get('/full', userController.getFullUserList);
 
 module.exports = router;
+

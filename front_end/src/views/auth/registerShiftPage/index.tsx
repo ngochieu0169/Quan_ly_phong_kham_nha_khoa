@@ -1,69 +1,85 @@
-import React, { useState } from "react";
-import { addDays, format, isSameDay, startOfDay } from "date-fns";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { addDays, format, parseISO, isSameDay } from "date-fns";
 
-type Shift = {
-  date: Date;
-  hour: number;
+type CaKham = {
+  maCaKham: number;
+  ngayKham: string;
+  gioBatDau: string;
+  gioKetThuc: string;
+  moTa: string | null;
+  maNhaSi: number | null;
 };
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 7).filter(
-  (h) => h < 11 || h > 13 // Loại bỏ từ 11h - 13h
-);
-
-// Tạo dữ liệu mẫu các ca đã đăng ký
-const registeredShifts: Shift[] = [
-  { date: startOfDay(addDays(new Date(), 1)), hour: 8 },
-  { date: startOfDay(addDays(new Date(), 2)), hour: 14 },
-  { date: startOfDay(addDays(new Date(), 3)), hour: 17 },
+const FIXED_SHIFTS = [
+  { start: "08:00:00", end: "10:00:00" },
+  { start: "10:00:00", end: "12:00:00" },
+  { start: "13:00:00", end: "15:00:00" },
+  { start: "15:00:00", end: "17:00:00" },
 ];
 
 function RegisterShiftPage() {
-  const [selectedShifts, setSelectedShifts] = useState<Shift[]>([]);
+  const [caKhams, setCaKhams] = useState<CaKham[]>([]);
 
-  const isShiftRegistered = (date: Date, hour: number) =>
-    registeredShifts.some(
-      (shift) => isSameDay(shift.date, date) && shift.hour === hour
-    );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const res = await axios.get(
+          `http://localhost:3000/api/cakham?maNhaSi=${user.tenTaiKhoan}`
+        );
+        setCaKhams(res.data || []);
+      } catch (err) {
+        console.error("Lỗi khi fetch ca khám:", err);
+      }
+    };
 
-  const isShiftSelected = (date: Date, hour: number) =>
-    selectedShifts.some(
-      (shift) => isSameDay(shift.date, date) && shift.hour === hour
-    );
+    fetchData();
+  }, []);
 
-  const handleToggle = (date: Date, hour: number) => {
-    const alreadyRegistered = isShiftRegistered(date, hour);
-    if (alreadyRegistered) return;
-
-    const newShift: Shift = { date, hour };
-    const alreadySelected = isShiftSelected(date, hour);
-
-    if (alreadySelected) {
-      setSelectedShifts((prev) =>
-        prev.filter((s) => !(isSameDay(s.date, date) && s.hour === hour))
-      );
-    } else {
-      setSelectedShifts((prev) => [...prev, newShift]);
+  const handleRegister = async (date: Date, start: string, end: string) => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      await axios.post(`http://localhost:3000/api/cakham`, {
+        maNhaSi: user.tenTaiKhoan,
+        ngayKham: format(date, "dd-MM-yyyy"),
+        gioBatDau: start,
+        gioKetThuc: end,
+        moTa: '',
+      });
+      alert("Đăng ký thành công");
+    } catch (err) {
+      console.error("Lỗi khi đăng ký:", err);
     }
   };
 
-  const handleSubmit = () => {
-    if (selectedShifts.length === 0) {
-      alert("Vui lòng chọn ít nhất một ca khám để đăng ký!");
-      return;
+  const handleUpdate = async (maCaKham: number) => {
+    try {
+      await axios.put(`http://localhost:3000/api/cakham/${maCaKham}`, {
+        trangThai: "xác nhận",
+      });
+      alert("Cập nhật thành công");
+    } catch (err) {
+      console.error("Lỗi khi cập nhật:", err);
     }
-    console.log("Ca khám đã đăng ký:", selectedShifts);
-    alert("Đăng ký thành công!");
-    // TODO: Gửi dữ liệu lên server
+  };
+
+  const findCaKham = (date: Date, gioBatDau: string) => {
+    return caKhams.find(
+      (ca) =>
+        isSameDay(parseISO(ca.ngayKham), date) &&
+        ca.gioBatDau === gioBatDau
+    );
   };
 
   return (
-    <div className=" mt-4">
-      <h4 className="mb-4">Đăng ký ca khám (Tối đa 7 ngày tới)</h4>
+    <div>
+      <h4 className="mb-4">Đăng ký ca khám</h4>
       <div className="table-responsive">
         <table className="table table-bordered text-center align-middle">
           <thead className="table-light">
             <tr>
-              <th>Giờ / Ngày</th>
+              <th>Khung giờ / Ngày</th>
               {Array.from({ length: 7 }, (_, i) => {
                 const date = addDays(new Date(), i + 1);
                 return <th key={i}>{format(date, "dd/MM")}</th>;
@@ -71,32 +87,33 @@ function RegisterShiftPage() {
             </tr>
           </thead>
           <tbody>
-            {HOURS.map((hour) => (
-              <tr key={hour}>
-                <td>{`${hour}:00 - ${hour + 1}:00`}</td>
+            {FIXED_SHIFTS.map(({ start, end }) => (
+              <tr key={start}>
+                <td>{`${start.slice(0, 5)} - ${end.slice(0, 5)}`}</td>
                 {Array.from({ length: 7 }, (_, i) => {
-                  const date = startOfDay(addDays(new Date(), i + 1));
-                  const registered = isShiftRegistered(date, hour);
-                  const selected = isShiftSelected(date, hour);
+                  const date = addDays(new Date(), i + 1);
+                  const ca = findCaKham(date, start);
+
+                  if (ca) {
+                    return (
+                      <td key={i}>
+                        <button
+                          className="btn btn-success w-100"
+                          onClick={() => handleUpdate(ca.maCaKham)}
+                        >
+                          {ca.moTa || "Đã đăng ký"}
+                        </button>
+                      </td>
+                    );
+                  }
 
                   return (
                     <td key={i}>
                       <button
-                        className={`btn w-100 ${
-                          registered
-                            ? "btn-success"
-                            : selected
-                            ? "btn-primary"
-                            : "btn-outline-secondary"
-                        }`}
-                        onClick={() => handleToggle(date, hour)}
-                        disabled={registered}
+                        className="btn btn-outline-primary w-100"
+                        onClick={() => handleRegister(date, start, end)}
                       >
-                        {registered
-                          ? "Đã đăng ký"
-                          : selected
-                          ? "Đã chọn"
-                          : "Trống"}
+                        Đăng ký
                       </button>
                     </td>
                   );
@@ -105,26 +122,6 @@ function RegisterShiftPage() {
             ))}
           </tbody>
         </table>
-      </div>
-      
-      <div className="d-flex justify-content-between ">
-      <div className="mt-4">
-            <h6>Các ca vừa chọn:</h6>
-            <ul>
-              {selectedShifts.map((shift, idx) => (
-                <li key={idx}>
-                  {format(shift.date, "dd/MM/yyyy")} - {shift.hour}:00 ~{" "}
-                  {shift.hour + 1}:00
-                </li>
-              ))}
-            </ul>
-          </div>
-
-        <div className="text-end">
-          <button className="btn btn-primary mt-3" onClick={handleSubmit}>
-            Xác nhận đăng ký
-          </button>
-        </div>
       </div>
     </div>
   );

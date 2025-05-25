@@ -74,6 +74,11 @@ exports.getById = (req, res) => {
 // POST tạo Lịch Khám
 exports.create = (req, res) => {
   const { ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham } = req.body;
+
+    // Chuyển đổi định dạng từ "DD-MM-YYYY" → "YYYY-MM-DD"
+    const [day, month, year] = ngayDatLich.split("-");
+    const formattedNgayKham = `${year}-${month}-${day}`;
+
   const sql = `
     INSERT INTO LICHKHAM
       (ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham)
@@ -81,7 +86,7 @@ exports.create = (req, res) => {
   `;
   db.query(
     sql,
-    [ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham],
+    [formattedNgayKham, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       res.status(201).json({ message: 'Tạo lịch khám thành công', maLichKham: result.insertId });
@@ -90,24 +95,44 @@ exports.create = (req, res) => {
 };
 
 // PUT cập nhật Lịch Khám
-exports.update = (req, res) => {
-  const { id } = req.params;
-  const { ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham } = req.body;
+// exports.update = (req, res) => {
+//   const { id } = req.params;
+//   const { ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham } = req.body;
+//   const sql = `
+//     UPDATE LICHKHAM SET
+//       ngayDatLich = ?, trieuChung = ?, trangThai = ?, maBenhNhan = ?, maNguoiDat = ?, quanHeBenhNhanVaNguoiDat = ?, maCaKham = ?
+//     WHERE maLichKham = ?
+//   `;
+//   db.query(
+//     sql,
+//     [ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham, id],
+//     (err, result) => {
+//       if (err) return res.status(500).json({ error: err.message });
+//       if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy lịch' });
+//       res.json({ message: 'Cập nhật lịch khám thành công' });
+//     }
+//   );
+// };
+
+// PUT /api/lich-kham/:id
+exports.confirmBooking = (req, res) => {
+  const { id } = req.params;           // id = maLichKham
+  const { trangThai } = req.body;     // expect "xác nhận"
+
   const sql = `
-    UPDATE LICHKHAM SET
-      ngayDatLich = ?, trieuChung = ?, trangThai = ?, maBenhNhan = ?, maNguoiDat = ?, quanHeBenhNhanVaNguoiDat = ?, maCaKham = ?
+    UPDATE LICHKHAM
+    SET trangThai = ?
     WHERE maLichKham = ?
   `;
-  db.query(
-    sql,
-    [ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham, id],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy lịch' });
-      res.json({ message: 'Cập nhật lịch khám thành công' });
+  db.query(sql, [trangThai, id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Không tìm thấy lịch khám" });
     }
-  );
+    res.json({ message: "Xác nhận lịch thành công" });
+  });
 };
+
 
 // DELETE Lịch Khám
 exports.delete = (req, res) => {

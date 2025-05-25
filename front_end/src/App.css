@@ -1,5 +1,5 @@
 .required {
-  color: red;
+  color: red !important;
 }
 
 :root {

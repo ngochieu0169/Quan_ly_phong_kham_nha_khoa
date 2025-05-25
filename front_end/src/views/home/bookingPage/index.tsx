@@ -1,13 +1,120 @@
-import React, { useState } from "react";
-import DoctorSchedule from "./doctorSchedule";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import EmptySchedule from "./emptySchedule";
+import { format } from "date-fns";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-function BookingPage() {
+interface Slot {
+  id: number;
+  start: string;
+  end: string;
+  doctorName?: string;
+}
+
+const BookingPage = () => {
   const [isRegisterForOther, setIsRegisterForOther] = useState(false);
+  const [phongKhams, setPhongKhams] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [selectedPhongKham, setSelectedPhongKham] = useState<string>("");
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedSlot, setSelectedSlot] = useState({}) as any;
 
-  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    tenBenhNhan: "",
+    sdt: "",
+    tuoi: "",
+    gioiTinh: "Nam",
+    trieuChung: "",
+    tenNguoiDatHo: "",
+    moiQuanHe: "",
+  });
 
-  const handleDoctorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedDoctor(e.target.value);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:3000/api/phongkham")
+      .then((res) => setPhongKhams(res.data))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (selectedPhongKham) {
+      axios
+        .get(
+          `http://localhost:3000/api/users/full?maQuyen=2&maPhongKham=${selectedPhongKham}`
+        )
+        .then((res) => setDoctors(res.data))
+        .catch(console.error);
+    } else {
+      setDoctors([]);
+    }
+  }, [selectedPhongKham]);
+
+  const handleInputChange = (e: any) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Nhận cả date và slot từ EmptySchedule
+  const handleSelect = (payload: { date: string; slot: Slot | null }) => {
+    setSelectedDate(payload.date);
+    setSelectedSlot({ start: payload.start, end: payload.end });
+    console.log(payload);
+  };
+
+  const handleSubmit = (e: any) => {
+    e.preventDefault();
+    const payloadCa = {
+      ngayKham: format(new Date(selectedDate), "dd-MM-yyyy"),
+      gioBatDau: selectedSlot.start,
+      gioKetThuc: selectedSlot.end,
+      moTa: formData.trieuChung,
+      maNhaSi: Number(selectedDoctor) || null,
+    };
+    axios
+      .post("http://localhost:3000/api/cakham", payloadCa)
+      .then((res1) => {
+        console.log("res:", res1);
+        const maCaKham = res1.data.data.insertId;
+        const payloadLich = {
+          ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
+          trieuChung: formData.trieuChung,
+          trangThai: "chờ",
+          maBenhNhan: user.maNguoiDung,
+          maNguoiDat: isRegisterForOther ? user.tenTaiKhoan : user.tenTaiKhoan,
+          quanHeBenhNhanVaNguoiDat: isRegisterForOther
+            ? formData.moiQuanHe
+            : null,
+          maCaKham,
+        };
+        return axios.post("http://localhost:3000/api/lichkham", payloadLich);
+      })
+      .then(() => {
+        toast.success("Đặt lịch thành công");
+        // reset toàn bộ
+        setFormData({
+          tenBenhNhan: "",
+          sdt: "",
+          tuoi: "",
+          gioiTinh: "Nam",
+          trieuChung: "",
+          tenNguoiDatHo: "",
+          moiQuanHe: "",
+        });
+        setSelectedPhongKham("");
+        setSelectedDoctor("");
+        setSelectedDate("");
+        setSelectedSlot(null);
+        toast.success("Đăng ký thành công");
+      })
+      .catch((err) => {
+        // console.error(err);
+        // alert("Đặt lịch thất bại.");
+        toast.error("Đăng ký thất bại. Vui lòng thử lại.");
+      });
   };
 
   return (
@@ -86,144 +193,148 @@ function BookingPage() {
                   </div>
                 </div>
 
-                <form className="appoinment-form" method="post" action="#">
+                <form className="appoinment-form" onSubmit={handleSubmit}>
+                  {/* Phòng khám */}
                   <div className="row">
-                    {/* Phòng khám */}
                     <div className="col-lg-6">
-                      <label className="form-label">
-                        Chọn phòng khám <span className="required">*</span>
-                      </label>
-                      <div className="form-group">
-                        <select className="form-control">
-                          <option>Phòng khám 1</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="col-lg-6">
-                      <label className="form-label">
-                        Tên bệnh nhân <span className="required">*</span>
-                      </label>
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Tên bệnh nhân"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Nếu đăng ký hộ thì hiển thị thêm */}
-                    {isRegisterForOther && (
-                      <>
-                        <div className="col-lg-6">
-                          <label className="form-label">
-                            Tên người đặt hộ <span className="required">*</span>
-                          </label>
-                          <div className="form-group">
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="Tên người đặt hộ"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-6">
-                          <label className="form-label">
-                            Mối quan hệ <span className="required">*</span>
-                          </label>
-                          <div className="form-group">
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="VD: Anh/em/bố/mẹ"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Các trường thông tin bình thường */}
-                    <div className="col-lg-6">
-                      <label className="form-label">
-                        Số điện thoại <span className="required">*</span>
-                      </label>
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="09xxxxxxx"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <label className="form-label">
-                        Tuổi <span className="required">*</span>
-                      </label>
-                      <div className="form-group">
-                        <input
-                          type="number"
-                          className="form-control"
-                          placeholder="Tuổi"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <label className="form-label">
-                        Giới tính <span className="required">*</span>
-                      </label>
-                      <div className="form-group">
-                        <select className="form-control">
-                          <option>Nam</option>
-                          <option>Nữ</option>
-                          <option>Khác</option>
-                        </select>
-                      </div>
+                      <label className="form-label">Chọn phòng khám *</label>
+                      <select
+                        className="form-control"
+                        value={selectedPhongKham}
+                        onChange={(e) => setSelectedPhongKham(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Chọn phòng khám --</option>
+                        {phongKhams.map((pk: any) => (
+                          <option key={pk.maPhongKham} value={pk.maPhongKham}>
+                            {pk.tenPhongKham}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Bác sĩ */}
                     <div className="col-lg-6">
                       <label className="form-label">Bác sĩ chỉ định</label>
-                      <div className="form-group">
-                        <select
-                          className="form-control"
-                          id="exampleFormControlSelect2"
-                          onChange={handleDoctorChange}
-                        >
-                          <option value="">Chọn bác sĩ</option>
-                          <option value="1">Bác sĩ 1</option>
-                          <option value="2">Bác sĩ 2</option>
-                          <option value="3">Bác sĩ 3</option>
-                        </select>
-                      </div>
+                      <select
+                        className="form-control"
+                        value={selectedDoctor}
+                        onChange={(e) => setSelectedDoctor(e.target.value)}
+                      >
+                        <option value="">-- Không chọn bác sĩ --</option>
+                        {doctors.map((doc: any) => (
+                          <option
+                            key={doc.maNguoiDung}
+                            value={doc.bacsiData?.maNhaSi}
+                          >
+                            {doc.hoTen}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    {selectedDoctor && (
-                      <div className="mt-4 mb-4">
-                        <h5>Lịch khám của bác sĩ đã chọn:</h5>
-                        <DoctorSchedule />
-                      </div>
+                    {/* Tên bệnh nhân */}
+                    <div className="col-lg-6">
+                      <label className="form-label">Tên bệnh nhân *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="tenBenhNhan"
+                        value={formData.tenBenhNhan}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    {/* Đăng ký hộ */}
+                    {isRegisterForOther && (
+                      <>
+                        <div className="col-lg-6">
+                          <label className="form-label">
+                            Tên người đặt hộ *
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="tenNguoiDatHo"
+                            value={formData.tenNguoiDatHo}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div className="col-lg-6">
+                          <label className="form-label">Mối quan hệ *</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="moiQuanHe"
+                            value={formData.moiQuanHe}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </>
                     )}
+
+                    {/* Các trường còn lại: sdt, tuổi, giới tính */}
+                    <div className="col-lg-6">
+                      <label className="form-label">Số điện thoại *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="sdt"
+                        value={formData.sdt}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="col-lg-6">
+                      <label className="form-label">Tuổi *</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="tuoi"
+                        value={formData.tuoi}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="col-lg-6">
+                      <label className="form-label">Giới tính *</label>
+                      <select
+                        className="form-control"
+                        name="gioiTinh"
+                        value={formData.gioiTinh}
+                        onChange={handleInputChange}
+                      >
+                        <option>Nam</option>
+                        <option>Nữ</option>
+                        <option>Khác</option>
+                      </select>
+                    </div>
                   </div>
 
-                  {/* Mô tả triệu chứng */}
+                  {/* Lịch trống theo ngày + slot UI */}
+                  <div className="mt-4 mb-4">
+                    <EmptySchedule onSlotSelect={handleSelect} />
+                  </div>
+
+                  {/* Triệu chứng */}
                   <div className="form-group-2 mb-4">
-                    <label className="form-label">
-                      Mô tả triệu chứng <span className="required">*</span>
-                    </label>
+                    <label className="form-label">Mô tả triệu chứng *</label>
                     <textarea
                       className="form-control"
                       rows={6}
-                      placeholder="Đau/nhức răng..."
-                    ></textarea>
+                      name="trieuChung"
+                      value={formData.trieuChung}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
 
-                  <a
-                    className="btn btn-main btn-round-full"
-                    href="confirmation.html"
-                  >
+                  <button type="submit" className="btn btn-main btn-round-full">
                     Đặt lịch ngay <i className="icofont-simple-right ml-2"></i>
-                  </a>
+                  </button>
                 </form>
               </div>
             </div>
@@ -232,6 +343,6 @@ function BookingPage() {
       </section>
     </div>
   );
-}
+};
 
 export default BookingPage;

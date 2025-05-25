@@ -60,7 +60,6 @@ function LoginPage() {
       const data: LoginResponse = await res.json();
 
       if (res.ok) {
-        console.log('user: ', data.user)
         // Lưu thông tin user (toàn bộ object) vào localStorage
         localStorage.setItem("user", JSON.stringify(data.user));
 
