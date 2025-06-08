@@ -66,7 +66,7 @@ function LoginPage() {
         dispatch(updateUser(data.user));
 
         // Điều hướng theo quyền
-        switch(data.user.maQuyen) {
+        switch (data.user.maQuyen) {
           case 1:
             navigate("/admin");
             break;
@@ -80,11 +80,11 @@ function LoginPage() {
             navigate("/");
             break;
           case 5:
-            navigate("/phong-kham");
+            navigate("/phongkham");
             break;
           default:
         }
-        
+
       } else {
         alert(data.message || "Đăng nhập thất bại");
       }

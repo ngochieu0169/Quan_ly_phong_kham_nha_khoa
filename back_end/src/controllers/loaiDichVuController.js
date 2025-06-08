@@ -4,7 +4,7 @@ const db = require('../configs/database');
 exports.getAll = (req, res) => {
   db.query('SELECT * FROM LOAIDICHVU', (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(result);
+    res.json({ data: result });
   });
 };
 
@@ -13,7 +13,7 @@ exports.getById = (req, res) => {
   db.query('SELECT * FROM LOAIDICHVU WHERE maLoaiDichVu = ?', [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     if (result.length === 0) return res.status(404).json({ message: 'Không tìm thấy loại dịch vụ' });
-    res.json(result[0]);
+    res.json({ data: result[0] });
   });
 };
 
@@ -22,7 +22,10 @@ exports.create = (req, res) => {
   const { tenLoaiDichVu } = req.body;
   db.query('INSERT INTO LOAIDICHVU (tenLoaiDichVu) VALUES (?)', [tenLoaiDichVu], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Thêm loại dịch vụ thành công' });
+    res.status(201).json({
+      message: 'Thêm loại dịch vụ thành công',
+      data: { maLoaiDichVu: result.insertId }
+    });
   });
 };
 

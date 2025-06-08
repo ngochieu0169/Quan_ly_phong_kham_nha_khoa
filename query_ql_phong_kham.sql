@@ -1,10 +1,10 @@
-create database PROJECT_PHONGKHAM
+-- create database PROJECT_PHONGKHAM;
 
 use PROJECT_PHONGKHAM;
 
 -- drop database PROJECT_PHONGKHAM
 
-select * from NGUOIDUNG
+-- select * from NGUOIDUNG;
 
 CREATE TABLE QUYEN (
     maQuyen INT PRIMARY KEY AUTO_INCREMENT,
@@ -175,7 +175,7 @@ INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, an
 -- INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh) VALUES 
 -- (N'Nguyễn Hoàng Phúc', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12');
 
-select * from NGUOIDUNG
+-- select * from NGUOIDUNG;
 -- TAIKHOAN
 INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES 
 ('admin', '123456', 1, 1),
@@ -250,11 +250,11 @@ INSERT INTO LICHKHAM (ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat
 
 -- PHIEUKHAM
 INSERT INTO PHIEUKHAM (ketQuaChuanDoan, ngayTaiKham, maLichKham) VALUES
-(N'Sâu răng nhẹ', '2024-06-10', 6),
-(N'Cần trám lại', '2024-06-15', 7),
-(N'Không phát hiện vấn đề', NULL, 8),
-(N'Nên làm sạch kỹ hơn', '2024-06-20', 9),
-(N'Cần niềng chỉnh hình', '2024-06-30', 10);
+(N'Sâu răng nhẹ', '2024-06-10', 1),
+(N'Cần trám lại', '2024-06-15', 2),
+(N'Không phát hiện vấn đề', NULL, 3),
+(N'Nên làm sạch kỹ hơn', '2024-06-20', 4),
+(N'Cần niềng chỉnh hình', '2024-06-30', 5);
 
 -- CHITIETPHIEUKHAM
 INSERT INTO CHITIETPHIEUKHAM (maDichVu, soLuong, ghiChu) VALUES
@@ -266,11 +266,11 @@ INSERT INTO CHITIETPHIEUKHAM (maDichVu, soLuong, ghiChu) VALUES
 
 -- HOADON
 INSERT INTO HOADON (soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham) VALUES
-(300000, N'Tiền mặt', 'Đã thu tiền', '2024-06-01', '2024-06-01', 6),
-(600000, N'Chuyển khoản', 'Đã thu tiền', '2024-06-02', '2024-06-03', 7),
-(200000, N'Tiền mặt', 'Chưa thu tiền', '2024-06-03', NULL, 8),
-(500000, N'VNPay', 'Đã thu tiền', '2024-06-04', '2024-06-04', 9),
-(15000000, N'Chuyển khoản', 'Chưa thu tiền', '2024-06-05', NULL, 10);
+(300000, N'Tiền mặt', 'Đã thu tiền', '2024-06-01', '2024-06-01', 1),
+(600000, N'Chuyển khoản', 'Đã thu tiền', '2024-06-02', '2024-06-03', 2),
+(200000, N'Tiền mặt', 'Chưa thu tiền', '2024-06-03', NULL, 3),
+(500000, N'VNPay', 'Đã thu tiền', '2024-06-04', '2024-06-04', 4),
+(15000000, N'Chuyển khoản', 'Chưa thu tiền', '2024-06-05', NULL, 5);
 
 -- THONGBAO
 INSERT INTO THONGBAO (maNguoiNhan, tieuDe, noiDung, ngayTao) VALUES

@@ -13,46 +13,91 @@ const formatDateKey = (d: Date) => {
 const formatDisplay = (d: Date) => {
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
-  const weekdayNames = ["CN","Th 2","Th 3","Th 4","Th 5","Th 6","Th 7"];
+  const weekdayNames = ["CN", "Th 2", "Th 3", "Th 4", "Th 5", "Th 6", "Th 7"];
   const wd = weekdayNames[d.getDay()];
   return { dayMonth: `${day}-${month}`, weekday: wd };
 };
 
-// type Slot = {
-//   id: number;
-//   start: string; // e.g. "08:00"
-//   end: string;   // e.g. "10:00"
-//   doctorName?: string;
-// };
+// Ca khám mặc định
+const DEFAULT_TIME_SLOTS = [
+  { start: "08:00", end: "09:00" },
+  { start: "09:00", end: "10:00" },
+  { start: "10:00", end: "11:00" },
+  { start: "13:00", end: "14:00" },
+  { start: "14:00", end: "15:00" },
+  { start: "15:00", end: "16:00" },
+  { start: "16:00", end: "17:00" },
+];
 
-export default function EmptySchedule({ onSlotSelect }: any) {
+interface EmptyScheduleProps {
+  onSlotSelect: (data: any) => void;
+  selectedDoctor?: string;
+  selectedPhongKham?: string;
+}
+
+export default function EmptySchedule({ onSlotSelect, selectedDoctor, selectedPhongKham }: EmptyScheduleProps) {
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [slots, setSlots] = useState([]) as any;
   const [selectedSlot, setSelectedSlot] = useState(null) as any
 
-  // Mỗi khi ngày thay đổi → fetch slots
+  // Mỗi khi ngày thay đổi hoặc bác sĩ thay đổi → fetch slots
   useEffect(() => {
     const fetchSlots = async () => {
       const dateKey = formatDateKey(selectedDate);
       try {
-        const res = await axios.get(`http://localhost:3000/api/cakham/lich-trong?date=${dateKey}`);
-        // Đảm bảo response là mảng
-        if (Array.isArray(res.data)) {
-          setSlots(res.data);
+        if (selectedDoctor && selectedPhongKham) {
+          // TH1: Có chọn bác sĩ - lấy ca khám của bác sĩ đó
+          const res = await axios.get(
+            `http://localhost:3000/api/cakham/bac-si?date=${dateKey}&maNhaSi=${selectedDoctor}&maPhongKham=${selectedPhongKham}`
+          );
+          if (Array.isArray(res.data)) {
+            setSlots(res.data.map((slot: any) => ({ ...slot, hasDoctor: true })));
+          } else {
+            setSlots([]);
+          }
+        } else if (selectedPhongKham) {
+          // TH2: Không chọn bác sĩ - hiển thị ca mặc định
+          const res = await axios.get(
+            `http://localhost:3000/api/cakham/lich-trong?date=${dateKey}&maPhongKham=${selectedPhongKham}`
+          );
+
+          let occupiedSlots = [];
+          if (Array.isArray(res.data)) {
+            occupiedSlots = res.data;
+          }
+
+          // Tạo slots mặc định và loại bỏ những slot đã được đặt
+          const availableSlots = DEFAULT_TIME_SLOTS.filter(defaultSlot => {
+            return !occupiedSlots.some((occupied: any) =>
+              occupied.start === defaultSlot.start && occupied.end === defaultSlot.end
+            );
+          }).map((slot, index) => ({
+            id: `default_${index}`,
+            start: slot.start,
+            end: slot.end,
+            hasDoctor: false,
+            isDefault: true
+          }));
+
+          setSlots(availableSlots);
         } else {
-          console.warn("API không trả về mảng:", res.data);
-          setSlots([]); // fallback an empty array
+          setSlots([]);
         }
         setSelectedSlot(null);
       } catch (err) {
         console.error("Lỗi khi gọi API:", err);
-        setSlots([]); // fallback an empty array
+        setSlots([]);
       }
     };
-    fetchSlots();
-  }, [selectedDate]);
-  
+
+    if (selectedPhongKham) {
+      fetchSlots();
+    } else {
+      setSlots([]);
+    }
+  }, [selectedDate, selectedDoctor, selectedPhongKham]);
+
 
   const { dayMonth, weekday } = formatDisplay(selectedDate);
 
@@ -73,46 +118,75 @@ export default function EmptySchedule({ onSlotSelect }: any) {
         </div>
       </div>
 
+      {/* Thông báo loại ca khám */}
+      {selectedPhongKham && (
+        <div className="mb-3">
+          <small className="text-muted">
+            {selectedDoctor ?
+              "Hiển thị ca khám của bác sĩ đã chọn" :
+              "Hiển thị ca khám mặc định (lễ tân sẽ phân công bác sĩ sau)"
+            }
+          </small>
+        </div>
+      )}
+
       {/* Hiển thị khung giờ */}
-      {slots.length > 0 ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          {slots?.map((slot: any) => {
-            const label = `${slot.start} - ${slot.end}`;
-            return (
-              <div
-                key={slot.id}
-                onClick={() => {
+      {selectedPhongKham ? (
+        slots.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            {slots?.map((slot: any) => {
+              const label = `${slot.start} - ${slot.end}`;
+              return (
+                <div
+                  key={slot.id}
+                  onClick={() => {
                     setSelectedSlot(slot)
                     onSlotSelect({
                       ...slot,
                       date: selectedDate
                     });
-                }}
-                style={{
+                  }}
+                  style={{
                     padding: '10px 14px',
-                    border: '1px solid #007bff',
+                    border: `1px solid ${slot.isDefault ? '#28a745' : '#007bff'}`,
                     borderRadius: '6px',
-                    backgroundColor: selectedSlot === slot ? '#007bff' : '#e7f1ff',
-                    color: selectedSlot === slot ? 'white' : '#007bff',
+                    backgroundColor: selectedSlot === slot ?
+                      (slot.isDefault ? '#28a745' : '#007bff') :
+                      (slot.isDefault ? '#e8f5e8' : '#e7f1ff'),
+                    color: selectedSlot === slot ? 'white' :
+                      (slot.isDefault ? '#28a745' : '#007bff'),
                     cursor: 'pointer',
                     userSelect: 'none',
                     transition: 'all 0.2s ease',
                   }}
-                
-              >
-                <div>{label}</div>
-                {slot.doctorName && (
-                  <div style={{ fontSize: 12, marginTop: 4 }}>
-                    BS: {slot.doctorName}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+
+                >
+                  <div>{label}</div>
+                  {slot.doctorName && (
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      BS: {slot.doctorName}
+                    </div>
+                  )}
+                  {slot.isDefault && (
+                    <div style={{ fontSize: 11, marginTop: 2, fontStyle: 'italic' }}>
+                      Ca mặc định
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p style={{ color: "#dc3545" }}>
+            {selectedDoctor ?
+              "Bác sĩ này không có ca khám nào trong ngày đã chọn." :
+              "Không còn khung giờ nào trống cho ngày này."
+            }
+          </p>
+        )
       ) : (
-        <p style={{ color: "#dc3545" }}>
-          Không còn khung giờ nào trống cho ngày này.
+        <p style={{ color: "#6c757d" }}>
+          Vui lòng chọn phòng khám trước để xem lịch trống.
         </p>
       )}
     </div>

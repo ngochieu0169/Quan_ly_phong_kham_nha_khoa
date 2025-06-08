@@ -10,6 +10,10 @@ import {
   FaFileInvoice,
   FaTools,
   FaSignOutAlt,
+  FaUsers,
+  FaCheckCircle,
+  FaPrescriptionBottleAlt,
+  FaBell,
 } from "react-icons/fa";
 
 interface ContainerManagerProps {
@@ -58,7 +62,7 @@ function ContainerManager({ children }: ContainerManagerProps) {
   ];
 
   const clinicMenu = [
-    { path: "/phong-kham", label: "Phòng khám", icon: <FaClinicMedical /> },
+    { path: "/phongkham", label: "Phòng khám", icon: <FaClinicMedical /> },
     { path: "/account", label: "Quản lý bác sĩ", icon: <FaClinicMedical /> },
     { path: "/shift", label: "Quản lý ca khám", icon: <FaClinicMedical /> },
     {
@@ -87,6 +91,19 @@ function ContainerManager({ children }: ContainerManagerProps) {
     { path: "/", label: "Đăng xuất", icon: <FaClinicMedical /> },
   ];
 
+  // lễ tân
+  const receptionistMenu = [
+    { path: "/le-tan/appointments", label: "Quản lý lịch khám", icon: <FaCalendarAlt /> },
+    { path: "/le-tan/appointments/create", label: "Tạo lịch khám mới", icon: <FaCalendarAlt /> },
+    { path: "/le-tan/patients", label: "Quản lý bệnh nhân", icon: <FaUsers /> },
+    { path: "/le-tan/checkin", label: "Xác nhận đến khám", icon: <FaCheckCircle /> },
+    { path: "/le-tan/medical-records", label: "Phiếu khám bệnh", icon: <FaPrescriptionBottleAlt /> },
+    { path: "/le-tan/billing", label: "Thanh toán", icon: <FaFileInvoice /> },
+    { path: "/le-tan/shifts", label: "Sắp xếp ca khám", icon: <FaClock /> },
+    { path: "/le-tan/notifications", label: "Thông báo", icon: <FaBell /> },
+    { path: "/", label: "Đăng xuất", icon: <FaSignOutAlt /> },
+  ];
+
   let menuItems = adminMenu; // default
 
   switch (user.maQuyen) {
@@ -97,7 +114,7 @@ function ContainerManager({ children }: ContainerManagerProps) {
       menuItems = doctorMenu;
       break;
     case 3:
-      menuItems = adminMenu;
+      menuItems = receptionistMenu;
       break;
     case 4:
       menuItems = patientMenu;
@@ -121,11 +138,10 @@ function ContainerManager({ children }: ContainerManagerProps) {
             <li key={item.path} className="nav-item mb-2">
               <Link
                 to={item.path}
-                className={`nav-link d-flex align-items-center gap-2 ${
-                  location.pathname === item.path
-                    ? "active text-primary fw-bold"
-                    : "text-white"
-                }`}
+                className={`nav-link d-flex align-items-center gap-2 ${location.pathname === item.path
+                  ? "active text-primary fw-bold"
+                  : "text-white"
+                  }`}
               >
                 <span>{item.icon}</span>
                 <span className="ml-2">{item.label}</span>

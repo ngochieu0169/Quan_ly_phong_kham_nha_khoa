@@ -1,0 +1,70 @@
+services:
+  # MySQL Database Service
+  database:
+    image: mysql:8.0
+    container_name: phongkham_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: PROJECT_PHONGKHAM
+      MYSQL_USER: phongkham_user
+      MYSQL_PASSWORD: phongkham_password
+    ports:
+      - "3307:3306"
+    volumes:
+      # - mysql_data:/var/lib/mysql
+      - ./query_ql_phong_kham.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - phongkham_network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  # Backend Service (NodeJS) - Development with hot reload
+  backend:
+    build:
+      context: ./back_end
+      dockerfile: Dockerfile.dev
+    container_name: phongkham_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./back_end/.env
+    volumes:
+      - ./back_end:/app
+      - /app/node_modules
+      - ./back_end/uploads:/app/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - phongkham_network
+
+  # Frontend Service (ReactJS) - Development with hot reload
+  frontend:
+    build:
+      context: ./front_end
+      dockerfile: Dockerfile.dev
+    container_name: phongkham_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - ./front_end/.env
+    volumes:
+      - ./front_end:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - phongkham_network
+
+volumes:
+  mysql_data:
+
+
+networks:
+  phongkham_network:
+    driver: bridge

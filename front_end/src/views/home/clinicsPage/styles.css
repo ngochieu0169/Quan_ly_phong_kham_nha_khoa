@@ -1,0 +1,134 @@
+.section.clinic-list {
+    padding: 80px 0;
+    background: #f8f9fa;
+}
+
+.clinic-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.clinic-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.clinic-img {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.clinic-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.clinic-card:hover .clinic-img img {
+    transform: scale(1.1);
+}
+
+.clinic-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clinic-placeholder i {
+    font-size: 60px;
+    color: white;
+}
+
+.clinic-content {
+    padding: 30px;
+}
+
+.clinic-name {
+    margin-bottom: 20px;
+}
+
+.clinic-name a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.clinic-name a:hover {
+    color: #667eea;
+}
+
+.clinic-info {
+    margin-bottom: 20px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.info-item i {
+    margin-right: 10px;
+    color: #667eea;
+    width: 20px;
+}
+
+.clinic-description {
+    color: #777;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.clinic-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.search-bar {
+    margin-bottom: 20px;
+}
+
+.search-bar .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 50px 0 0 50px;
+}
+
+.search-bar .input-group-text {
+    background: #667eea;
+    color: white;
+    border: 2px solid #667eea;
+    border-radius: 0 50px 50px 0;
+}
+
+.no-results {
+    padding: 60px 20px;
+}
+
+.no-results i {
+    font-size: 80px;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.cta-section {
+    background: white;
+    padding: 50px;
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+}
+
+.divider {
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}

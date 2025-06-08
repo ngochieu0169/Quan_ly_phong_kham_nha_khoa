@@ -10,7 +10,7 @@ const TheHeader: React.FC = () => {
   const navigate = useNavigate();
 
   // Lấy user từ Redux store
-  const user = useSelector((state:any) => state.user.user);
+  const user = useSelector((state: any) => state.user.user);
   const isLoggedIn = Boolean(user && user.tenTaiKhoan);
 
   // Khởi tạo: kiểm tra localStorage và sync vào Redux
@@ -96,19 +96,10 @@ const TheHeader: React.FC = () => {
                 <Link className="nav-link" to="/">Trang chủ</Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/about">Về chúng tôi</Link>
-              </li>
-              <li className="nav-item">
                 <Link className="nav-link" to="/services">Dịch vụ</Link>
               </li>
-              <li className="nav-item dropdown">
-                <Link className="nav-link dropdown-toggle" to="#" data-toggle="dropdown">
-                  Phòng khám <i className="icofont-thin-down" />
-                </Link>
-                <ul className="dropdown-menu">
-                  <li><Link className="dropdown-item" to="/clinics">Danh sách phòng khám</Link></li>
-                  <li><Link className="dropdown-item" to="/clinic-detail">Chi tiết phòng khám</Link></li>
-                </ul>
+              <li className="nav-item">
+                <Link className="nav-link" to="/clinics">Phòng khám</Link>
               </li>
               <li className="nav-item dropdown">
                 <Link className="nav-link dropdown-toggle" to="#" data-toggle="dropdown">
@@ -150,7 +141,7 @@ const TheHeader: React.FC = () => {
                     <li>
                       <a className="dropdown-item" href='#' onClick={handleLogout} >Đăng xuất</a>
                     </li>
-           
+
                   </ul>
                 </li>
               )}

@@ -1,4 +1,5 @@
-import React, { useEffect, useState, ChangeEvent, FormEvent } from "react";
+import React, { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,7 +11,7 @@ type Clinic = {
   soDienThoai: string;
   gioLamViec: string;
   maChuPhongKham: string;
-  trangthai: "duyệt" | "chưa duyệt" | "VIP";
+  trangthai: "duyệt" | "chưa duyệt" | "VIP" | "uy tín";
 };
 
 type User = {
@@ -30,6 +31,11 @@ const ClinicManagerPage: React.FC = () => {
     soDienThoai: "",
     gioLamViec: "",
     maChuPhongKham: "",
+  });
+
+  const [workingHours, setWorkingHours] = useState({
+    gioMo: "",
+    gioDong: ""
   });
 
   // states for edit modal
@@ -68,10 +74,15 @@ const ClinicManagerPage: React.FC = () => {
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:3000/api/phong-kham", newClinic);
+      const clinicData = {
+        ...newClinic,
+        gioLamViec: `${workingHours.gioMo} - ${workingHours.gioDong}`
+      };
+      await axios.post("http://localhost:3000/api/phongkham", clinicData);
       toast.success("Tạo mới phòng khám thành công!");
       closeAddModal();
       setNewClinic({ tenPhongKham: "", diaChi: "", soDienThoai: "", gioLamViec: "", maChuPhongKham: "" });
+      setWorkingHours({ gioMo: "", gioDong: "" });
       fetchClinics();
     } catch {
       toast.error("Tạo mới thất bại");
@@ -96,7 +107,7 @@ const ClinicManagerPage: React.FC = () => {
     if (!selectedClinic) return;
     try {
       await axios.put(
-        `http://localhost:3000/api/phong-kham/${selectedClinic.maPhongKham}`,
+        `http://localhost:3000/api/phongkham/${selectedClinic.maPhongKham}`,
         { trangthai: selectedClinic.trangthai }
       );
       toast.success("Cập nhật trạng thái thành công!");
@@ -110,7 +121,7 @@ const ClinicManagerPage: React.FC = () => {
   const deleteClinic = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
     try {
-      await axios.delete(`http://localhost:3000/api/phong-kham/${id}`);
+      await axios.delete(`http://localhost:3000/api/phongkham/${id}`);
       toast.success("Xóa thành công!");
       fetchClinics();
     } catch {
@@ -153,10 +164,10 @@ const ClinicManagerPage: React.FC = () => {
                 <td>{c.gioLamViec}</td>
                 <td>{c.maChuPhongKham}</td>
                 <td>
-                  <span className={`badge ${
-                    c.trangthai === "duyệt" ? "bg-success" :
-                    c.trangthai === "chưa duyệt" ? "bg-warning text-dark" : "bg-info"
-                  }`}>
+                  <span className={`badge ${c.trangthai === "duyệt" ? "bg-success" :
+                    c.trangthai === "chưa duyệt" ? "bg-warning text-dark" :
+                      c.trangthai === "VIP" ? "bg-info" : "bg-secondary"
+                    }`}>
                     {c.trangthai}
                   </span>
                 </td>
@@ -225,13 +236,60 @@ const ClinicManagerPage: React.FC = () => {
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Giờ làm việc</label>
-                      <input
-                        name="gioLamViec"
-                        value={newClinic.gioLamViec}
-                        onChange={handleNewChange}
-                        className="form-control"
-                        required
-                      />
+
+                      {/* Quick select buttons */}
+                      <div className="mb-2">
+                        <small className="text-muted d-block mb-1">Khung giờ phổ biến:</small>
+                        <div className="btn-group btn-group-sm" role="group">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setWorkingHours({ gioMo: "07:00", gioDong: "17:00" })}
+                          >
+                            7:00 - 17:00
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setWorkingHours({ gioMo: "08:00", gioDong: "18:00" })}
+                          >
+                            8:00 - 18:00
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setWorkingHours({ gioMo: "08:00", gioDong: "20:00" })}
+                          >
+                            8:00 - 20:00
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Time inputs */}
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <input
+                            type="time"
+                            className="form-control"
+                            placeholder="Giờ mở"
+                            value={workingHours.gioMo}
+                            onChange={(e) => setWorkingHours({ ...workingHours, gioMo: e.target.value })}
+                            required
+                          />
+                          <small className="text-muted">Giờ mở cửa</small>
+                        </div>
+                        <div className="col-6">
+                          <input
+                            type="time"
+                            className="form-control"
+                            placeholder="Giờ đóng"
+                            value={workingHours.gioDong}
+                            onChange={(e) => setWorkingHours({ ...workingHours, gioDong: e.target.value })}
+                            required
+                          />
+                          <small className="text-muted">Giờ đóng cửa</small>
+                        </div>
+                      </div>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Chủ phòng khám</label>
@@ -284,6 +342,7 @@ const ClinicManagerPage: React.FC = () => {
                     <option value="duyệt">duyệt</option>
                     <option value="chưa duyệt">chưa duyệt</option>
                     <option value="VIP">VIP</option>
+                    <option value="uy tín">uy tín</option>
                   </select>
                 </div>
               </div>

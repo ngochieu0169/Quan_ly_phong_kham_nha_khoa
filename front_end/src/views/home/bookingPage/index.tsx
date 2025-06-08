@@ -61,60 +61,88 @@ const BookingPage = () => {
   // Nhận cả date và slot từ EmptySchedule
   const handleSelect = (payload: { date: string; slot: Slot | null }) => {
     setSelectedDate(payload.date);
-    setSelectedSlot({ start: payload.start, end: payload.end });
+    setSelectedSlot(payload);
     console.log(payload);
   };
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    const payloadCa = {
-      ngayKham: format(new Date(selectedDate), "dd-MM-yyyy"),
-      gioBatDau: selectedSlot.start,
-      gioKetThuc: selectedSlot.end,
-      moTa: formData.trieuChung,
-      maNhaSi: Number(selectedDoctor) || null,
-    };
-    axios
-      .post("http://localhost:3000/api/cakham", payloadCa)
-      .then((res1) => {
-        console.log("res:", res1);
-        const maCaKham = res1.data.data.insertId;
-        const payloadLich = {
-          ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
-          trieuChung: formData.trieuChung,
-          trangThai: "chờ",
-          maBenhNhan: user.maNguoiDung,
-          maNguoiDat: isRegisterForOther ? user.tenTaiKhoan : user.tenTaiKhoan,
-          quanHeBenhNhanVaNguoiDat: isRegisterForOther
-            ? formData.moiQuanHe
-            : null,
-          maCaKham,
-        };
-        return axios.post("http://localhost:3000/api/lichkham", payloadLich);
-      })
-      .then(() => {
-        toast.success("Đặt lịch thành công");
-        // reset toàn bộ
-        setFormData({
-          tenBenhNhan: "",
-          sdt: "",
-          tuoi: "",
-          gioiTinh: "Nam",
-          trieuChung: "",
-          tenNguoiDatHo: "",
-          moiQuanHe: "",
+
+    if (selectedSlot?.isDefault) {
+      // TH2: Ca mặc định - tạo ca khám mới không có bác sĩ
+      const payloadCa = {
+        ngayKham: format(new Date(selectedDate), "dd-MM-yyyy"),
+        gioBatDau: selectedSlot.start,
+        gioKetThuc: selectedSlot.end,
+        moTa: formData.trieuChung,
+        maNhaSi: null, // Không có bác sĩ, lễ tân sẽ phân công sau
+      };
+
+      axios
+        .post("http://localhost:3000/api/cakham", payloadCa)
+        .then((res1) => {
+          console.log("res:", res1);
+          const maCaKham = res1.data.data.insertId;
+          const payloadLich = {
+            ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
+            trieuChung: formData.trieuChung,
+            trangThai: "chờ",
+            maBenhNhan: user.maNguoiDung,
+            maNguoiDat: isRegisterForOther ? user.tenTaiKhoan : user.tenTaiKhoan,
+            quanHeBenhNhanVaNguoiDat: isRegisterForOther
+              ? formData.moiQuanHe
+              : null,
+            maCaKham,
+          };
+          return axios.post("http://localhost:3000/api/lichkham", payloadLich);
+        })
+        .then(() => {
+          toast.success("Đặt lịch thành công! Lễ tân sẽ phân công bác sĩ cho bạn.");
+          resetForm();
+        })
+        .catch((err) => {
+          toast.error("Đăng ký thất bại. Vui lòng thử lại.");
         });
-        setSelectedPhongKham("");
-        setSelectedDoctor("");
-        setSelectedDate("");
-        setSelectedSlot(null);
-        toast.success("Đăng ký thành công");
-      })
-      .catch((err) => {
-        // console.error(err);
-        // alert("Đặt lịch thất bại.");
-        toast.error("Đăng ký thất bại. Vui lòng thử lại.");
-      });
+    } else {
+      // TH1: Ca khám có sẵn của bác sĩ - sử dụng ca khám đó
+      const payloadLich = {
+        ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
+        trieuChung: formData.trieuChung,
+        trangThai: "chờ",
+        maBenhNhan: user.maNguoiDung,
+        maNguoiDat: isRegisterForOther ? user.tenTaiKhoan : user.tenTaiKhoan,
+        quanHeBenhNhanVaNguoiDat: isRegisterForOther
+          ? formData.moiQuanHe
+          : null,
+        maCaKham: selectedSlot.id,
+      };
+
+      axios
+        .post("http://localhost:3000/api/lichkham", payloadLich)
+        .then(() => {
+          toast.success("Đặt lịch thành công!");
+          resetForm();
+        })
+        .catch((err) => {
+          toast.error("Đăng ký thất bại. Vui lòng thử lại.");
+        });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      tenBenhNhan: "",
+      sdt: "",
+      tuoi: "",
+      gioiTinh: "Nam",
+      trieuChung: "",
+      tenNguoiDatHo: "",
+      moiQuanHe: "",
+    });
+    setSelectedPhongKham("");
+    setSelectedDoctor("");
+    setSelectedDate("");
+    setSelectedSlot(null);
   };
 
   return (
@@ -316,7 +344,11 @@ const BookingPage = () => {
 
                   {/* Lịch trống theo ngày + slot UI */}
                   <div className="mt-4 mb-4">
-                    <EmptySchedule onSlotSelect={handleSelect} />
+                    <EmptySchedule
+                      onSlotSelect={handleSelect}
+                      selectedDoctor={selectedDoctor}
+                      selectedPhongKham={selectedPhongKham}
+                    />
                   </div>
 
                   {/* Triệu chứng */}

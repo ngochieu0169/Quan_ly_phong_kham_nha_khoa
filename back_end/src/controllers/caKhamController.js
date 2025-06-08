@@ -51,7 +51,7 @@ exports.getById = (req, res) => {
 exports.create = (req, res) => {
   let { ngayKham, gioBatDau, gioKetThuc, moTa, maNhaSi } = req.body;
 
-// Nếu không có maNhaSi, gán null
+  // Nếu không có maNhaSi, gán null
   if (!maNhaSi) {
     maNhaSi = null;
   }
@@ -72,11 +72,34 @@ exports.create = (req, res) => {
 // PUT /api/cakham/:id
 exports.update = (req, res) => {
   const { id } = req.params;
-  const { trangThai } = req.body;
+  const { trangThai, maNhaSi } = req.body;
 
-  const sql = "UPDATE CAKHAM SET trangThai = ? WHERE maCaKham = ?";
-  db.query(sql, [trangThai, id], (err, result) => {
+  let sql = "UPDATE CAKHAM SET ";
+  const params = [];
+  const updates = [];
+
+  if (trangThai !== undefined) {
+    updates.push("trangThai = ?");
+    params.push(trangThai);
+  }
+
+  if (maNhaSi !== undefined) {
+    updates.push("maNhaSi = ?");
+    params.push(maNhaSi);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: "Không có dữ liệu để cập nhật" });
+  }
+
+  sql += updates.join(", ") + " WHERE maCaKham = ?";
+  params.push(id);
+
+  db.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Không tìm thấy ca khám" });
+    }
     res.json({ message: "Cập nhật thành công" });
   });
 };
@@ -92,79 +115,107 @@ exports.delete = (req, res) => {
 
 
 exports.lichTrong = (req, res) => {
-  const { date } = req.query;
+  const { date, maPhongKham } = req.query;
   if (!date) {
     return res.status(400).json({ error: "Thiếu tham số ngày (date=YYYY-MM-DD)" });
   }
 
   // 1. Các ca mặc định
   const defaultSlots = [
-    { start: "08:00:00", end: "10:00:00" },
-    { start: "10:00:00", end: "12:00:00" },
-    { start: "13:00:00", end: "15:00:00" },
-    { start: "15:00:00", end: "17:00:00" },
+    { start: "08:00:00", end: "09:00:00" },
+    { start: "09:00:00", end: "10:00:00" },
+    { start: "10:00:00", end: "11:00:00" },
+    { start: "13:00:00", end: "14:00:00" },
+    { start: "14:00:00", end: "15:00:00" },
+    { start: "15:00:00", end: "16:00:00" },
+    { start: "16:00:00", end: "17:00:00" },
   ];
 
-  // 2. Lấy ca bác sĩ đã đăng ký CAKHAM cho ngày đó, kèm tên bác sĩ
-  const sqlCakham = `
-    SELECT c.maCaKham, c.gioBatDau, c.gioKetThuc, n.hoTen AS doctorName
+  // 2. Lấy tất cả ca khám đã được đặt trong ngày đó (bao gồm cả ca có bác sĩ và ca mặc định)
+  let sqlBooked = `
+    SELECT DISTINCT c.gioBatDau, c.gioKetThuc
     FROM CAKHAM c
-    JOIN NHASI n ON c.maNhaSi = n.maNhaSi
+    JOIN LICHKHAM lk ON c.maCaKham = lk.maCaKham
     WHERE c.ngayKham = ?
   `;
+  const params = [date];
 
-  // 3. Lấy các ca đã được bệnh nhân đặt (tham chiếu bảng LICH_HEN)
-  //    Giả sử bảng LICH_HEN có cột maCaKham
-  const sqlBooked = `
-    SELECT DISTINCT maCaKham
-    FROM LICHKHAM
-  `;
+  if (maPhongKham) {
+    sqlBooked += ` AND (c.maNhaSi IS NULL OR (
+      SELECT ns.maPhongKham 
+      FROM NHASI ns 
+      WHERE ns.maNhaSi = c.maNhaSi
+    ) = ?)`;
+    params.push(maPhongKham);
+  }
 
-  // Chạy 2 query song song
-  db.query(sqlCakham, [date], (err, cakhams) => {
+  db.query(sqlBooked, params, (err, bookedRows) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ error: "Lỗi khi đọc CAKHAM" });
+      return res.status(500).json({ error: "Lỗi khi đọc lịch đã đặt" });
     }
 
-    db.query(sqlBooked, (err2, bookedRows) => {
-      if (err2) {
-        console.error(err2);
-        return res.status(500).json({ error: "Lỗi khi đọc LICH_HEN" });
-      }
+    const bookedSet = new Set(
+      bookedRows.map(row => `${row.gioBatDau}-${row.gioKetThuc}`)
+    );
 
-      const bookedSet = new Set(bookedRows.map(r => r.maCaKham));
+    // 3. Tạo kết quả: lọc ra các slot mặc định chưa bị đặt
+    const result = defaultSlots
+      .filter(slot => {
+        const key = `${slot.start}-${slot.end}`;
+        return !bookedSet.has(key);
+      })
+      .map((slot, index) => ({
+        id: `default_${index}`,
+        start: slot.start.slice(0, 5),
+        end: slot.end.slice(0, 5),
+      }));
 
-      // Ghép doctorName vào các ca bác sĩ đã đăng ký
-      // và loại bỏ những ca đã booked
-      const slotMap = new Map(); // key = start+'-'+end
-      cakhams.forEach(slot => {
-        if (!bookedSet.has(slot.maCaKham)) {
-          slotMap.set(
-            `${slot.gioBatDau}-${slot.gioKetThuc}`,
-            slot.doctorName
-          );
-        }
-      });
-
-      // 4. Tạo kết quả: duyệt defaultSlots
-      const result = defaultSlots
-        .map(s => {
-          const key = `${s.start}-${s.end}`;
-          const doctorName = slotMap.get(key);
-          return {
-            start: s.start.slice(0,5),
-            end: s.end.slice(0,5),
-            ...(doctorName && { doctorName })
-          };
-        })
-        // 5. Loại slot nào bác sĩ đã đăng ký nhưng sau đó bị book?
-        //    (đã loại ở bước slotMap), và default slot luôn xuất hiện—
-        //    nếu bạn muốn chỉ show khi bác sĩ đã mở slot, hãy .filter(d => slotMap.has(...))
-        //    Còn nếu muốn show tất cả default và chỉ ẩn booking, giữ nguyên.
-        ;
-
-      return res.json(result);
-    });
+    return res.json(result);
   });
-}
+};
+
+// Lấy ca khám của bác sĩ theo ngày
+exports.getBacSiSchedule = (req, res) => {
+  const { date, maNhaSi, maPhongKham } = req.query;
+
+  if (!date || !maNhaSi || !maPhongKham) {
+    return res.status(400).json({
+      error: "Thiếu tham số bắt buộc (date, maNhaSi, maPhongKham)"
+    });
+  }
+
+  // Lấy ca khám của bác sĩ trong ngày đó chưa được đặt
+  const sql = `
+    SELECT 
+      c.maCaKham as id,
+      c.gioBatDau as start,
+      c.gioKetThuc as end,
+      n.hoTen as doctorName,
+      c.moTa
+    FROM CAKHAM c
+    JOIN NHASI n ON c.maNhaSi = n.maNhaSi
+    JOIN PHONGKHAM pk ON n.maPhongKham = pk.maPhongKham
+    LEFT JOIN LICHKHAM lk ON c.maCaKham = lk.maCaKham
+    WHERE c.ngayKham = ? 
+      AND c.maNhaSi = ?
+      AND pk.maPhongKham = ?
+      AND lk.maCaKham IS NULL
+  `;
+
+  db.query(sql, [date, maNhaSi, maPhongKham], (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Lỗi khi lấy lịch bác sĩ" });
+    }
+
+    // Format lại thời gian từ HH:MM:SS về HH:MM
+    const result = rows.map(slot => ({
+      ...slot,
+      start: slot.start.slice(0, 5),
+      end: slot.end.slice(0, 5)
+    }));
+
+    res.json(result);
+  });
+};

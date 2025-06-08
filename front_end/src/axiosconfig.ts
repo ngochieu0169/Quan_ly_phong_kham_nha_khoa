@@ -1,5 +1,5 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
- function defaultHeaders() {
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
+function defaultHeaders() {
   const defaultHeaders = {
     Accept: "application/json",
   };
@@ -9,11 +9,14 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 
 
 const requestAPI: AxiosInstance = axios.create({
-  baseURL: "http://localhost:5005",
+  baseURL: "http://localhost:3000",
   // baseURL: "https://blogger-8e4f.onrender.com",
 });
-requestAPI.interceptors.request.use(  function (config: AxiosRequestConfig) {
-  config.headers =  defaultHeaders();
+requestAPI.interceptors.request.use(function (config: InternalAxiosRequestConfig) {
+  const headers = defaultHeaders();
+  Object.keys(headers).forEach(key => {
+    config.headers.set(key, headers[key as keyof typeof headers]);
+  });
   return config;
 });
 
