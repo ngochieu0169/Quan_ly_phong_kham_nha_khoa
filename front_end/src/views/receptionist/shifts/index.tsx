@@ -221,7 +221,7 @@ function ReceptionistShifts() {
 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">Sắp xếp ca làm việc</h4>
+                <h4 className="mb-0">Sắp xếp lịch khám</h4>
                 <div className="d-flex align-items-center gap-3">
                     <input
                         type="date"
@@ -383,11 +383,20 @@ function ReceptionistShifts() {
                                                                             defaultValue=""
                                                                         >
                                                                             <option value="">Chọn nha sĩ...</option>
-                                                                            {dentists.map(dentist => (
-                                                                                <option key={dentist.maNhaSi} value={dentist.maNhaSi}>
-                                                                                    {dentist.hoTen}
-                                                                                </option>
-                                                                            ))}
+                                                                            {(() => {
+                                                                                // Lọc bác sĩ theo phòng khám nếu có trong mô tả
+                                                                                const pkMatch = shift.moTa?.match(/\[PK(\d+)\]/);
+                                                                                const pkId = pkMatch ? parseInt(pkMatch[1]) : null;
+                                                                                const filteredDentists = pkId
+                                                                                    ? dentists.filter(d => d.maPhongKham === pkId)
+                                                                                    : dentists;
+
+                                                                                return filteredDentists.map(dentist => (
+                                                                                    <option key={dentist.maNhaSi} value={dentist.maNhaSi}>
+                                                                                        {dentist.hoTen}
+                                                                                    </option>
+                                                                                ));
+                                                                            })()}
                                                                         </select>
                                                                     </div>
                                                                 )}
@@ -406,6 +415,11 @@ function ReceptionistShifts() {
                                                                         <small className="text-muted">
                                                                             <strong>Ghi chú:</strong> {shift.moTa}
                                                                         </small>
+                                                                        {shift.moTa.startsWith('[PK') && (
+                                                                            <div className="badge bg-info ms-2">
+                                                                                {shift.moTa.match(/\[PK(\d+)\]/)?.[0] || ''}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>

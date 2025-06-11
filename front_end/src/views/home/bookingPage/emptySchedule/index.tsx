@@ -18,7 +18,7 @@ const formatDisplay = (d: Date) => {
   return { dayMonth: `${day}-${month}`, weekday: wd };
 };
 
-// Ca khám mặc định
+// Ca khám mặc định - sẽ hiển thị khi không chọn bác sĩ cụ thể
 const DEFAULT_TIME_SLOTS = [
   { start: "08:00", end: "09:00" },
   { start: "09:00", end: "10:00" },
@@ -57,22 +57,8 @@ export default function EmptySchedule({ onSlotSelect, selectedDoctor, selectedPh
             setSlots([]);
           }
         } else if (selectedPhongKham) {
-          // TH2: Không chọn bác sĩ - hiển thị ca mặc định
-          const res = await axios.get(
-            `http://localhost:3000/api/cakham/lich-trong?date=${dateKey}&maPhongKham=${selectedPhongKham}`
-          );
-
-          let occupiedSlots = [];
-          if (Array.isArray(res.data)) {
-            occupiedSlots = res.data;
-          }
-
-          // Tạo slots mặc định và loại bỏ những slot đã được đặt
-          const availableSlots = DEFAULT_TIME_SLOTS.filter(defaultSlot => {
-            return !occupiedSlots.some((occupied: any) =>
-              occupied.start === defaultSlot.start && occupied.end === defaultSlot.end
-            );
-          }).map((slot, index) => ({
+          // TH2: Không chọn bác sĩ - LUÔN hiển thị TẤT CẢ ca mặc định
+          const availableSlots = DEFAULT_TIME_SLOTS.map((slot, index) => ({
             id: `default_${index}`,
             start: slot.start,
             end: slot.end,
@@ -121,12 +107,15 @@ export default function EmptySchedule({ onSlotSelect, selectedDoctor, selectedPh
       {/* Thông báo loại ca khám */}
       {selectedPhongKham && (
         <div className="mb-3">
-          <small className="text-muted">
-            {selectedDoctor ?
-              "Hiển thị ca khám của bác sĩ đã chọn" :
-              "Hiển thị ca khám mặc định (lễ tân sẽ phân công bác sĩ sau)"
-            }
-          </small>
+          <div className="alert alert-info py-2">
+            <small>
+              <i className="icofont-info-circle me-2"></i>
+              {selectedDoctor ?
+                "Hiển thị ca khám có sẵn của bác sĩ đã chọn" :
+                "Hiển thị khung giờ mặc định. Lễ tân sẽ phân công bác sĩ phù hợp cho bạn sau khi đặt lịch."
+              }
+            </small>
+          </div>
         </div>
       )}
 
@@ -148,13 +137,13 @@ export default function EmptySchedule({ onSlotSelect, selectedDoctor, selectedPh
                   }}
                   style={{
                     padding: '10px 14px',
-                    border: `1px solid ${slot.isDefault ? '#28a745' : '#007bff'}`,
+                    border: `1px solid ${slot.isDefault ? '#6c757d' : '#007bff'}`,
                     borderRadius: '6px',
                     backgroundColor: selectedSlot === slot ?
-                      (slot.isDefault ? '#28a745' : '#007bff') :
-                      (slot.isDefault ? '#e8f5e8' : '#e7f1ff'),
+                      (slot.isDefault ? '#6c757d' : '#007bff') :
+                      (slot.isDefault ? '#f8f9fa' : '#e7f1ff'),
                     color: selectedSlot === slot ? 'white' :
-                      (slot.isDefault ? '#28a745' : '#007bff'),
+                      (slot.isDefault ? '#495057' : '#007bff'),
                     cursor: 'pointer',
                     userSelect: 'none',
                     transition: 'all 0.2s ease',
@@ -169,7 +158,7 @@ export default function EmptySchedule({ onSlotSelect, selectedDoctor, selectedPh
                   )}
                   {slot.isDefault && (
                     <div style={{ fontSize: 11, marginTop: 2, fontStyle: 'italic' }}>
-                      Ca mặc định
+                      Khung giờ khám
                     </div>
                   )}
                 </div>
@@ -180,7 +169,7 @@ export default function EmptySchedule({ onSlotSelect, selectedDoctor, selectedPh
           <p style={{ color: "#dc3545" }}>
             {selectedDoctor ?
               "Bác sĩ này không có ca khám nào trong ngày đã chọn." :
-              "Không còn khung giờ nào trống cho ngày này."
+              "Không có ca khám nào cho ngày này."
             }
           </p>
         )

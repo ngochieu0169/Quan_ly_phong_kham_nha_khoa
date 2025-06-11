@@ -1,11 +1,31 @@
 // controllers/nhaSiController.js
 const db = require('../configs/database');
 
-// Lấy danh sách tất cả nha sĩ
+// Lấy danh sách nha sĩ (có thể filter theo phòng khám)
 exports.getAll = (req, res) => {
-  const sql = `SELECT * FROM NHASI`;
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+  const { maPhongKham } = req.query;
+
+  console.log('=== DEBUG nhaSi getAll ===');
+  console.log('Query params:', req.query);
+  console.log('maPhongKham:', maPhongKham);
+
+  let sql = `SELECT * FROM NHASI`;
+  const params = [];
+
+  if (maPhongKham) {
+    sql += ` WHERE maPhongKham = ?`;
+    params.push(maPhongKham);
+  }
+
+  console.log('SQL query:', sql);
+  console.log('Params:', params);
+
+  db.query(sql, params, (err, results) => {
+    if (err) {
+      console.log('DB Error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log('Results count:', results.length);
     res.json(results);
   });
 };

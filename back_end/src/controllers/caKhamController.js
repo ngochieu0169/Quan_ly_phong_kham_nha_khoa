@@ -120,7 +120,7 @@ exports.lichTrong = (req, res) => {
     return res.status(400).json({ error: "Thiếu tham số ngày (date=YYYY-MM-DD)" });
   }
 
-  // 1. Các ca mặc định
+  // Các ca mặc định - LUÔN hiển thị tất cả khi không chọn bác sĩ
   const defaultSlots = [
     { start: "08:00:00", end: "09:00:00" },
     { start: "09:00:00", end: "10:00:00" },
@@ -131,48 +131,15 @@ exports.lichTrong = (req, res) => {
     { start: "16:00:00", end: "17:00:00" },
   ];
 
-  // 2. Lấy tất cả ca khám đã được đặt trong ngày đó (bao gồm cả ca có bác sĩ và ca mặc định)
-  let sqlBooked = `
-    SELECT DISTINCT c.gioBatDau, c.gioKetThuc
-    FROM CAKHAM c
-    JOIN LICHKHAM lk ON c.maCaKham = lk.maCaKham
-    WHERE c.ngayKham = ?
-  `;
-  const params = [date];
+  // Trả về tất cả ca mặc định, không cần kiểm tra đã đặt hay chưa
+  // Lễ tân sẽ tự xử lý việc phân công
+  const result = defaultSlots.map((slot, index) => ({
+    id: `default_${index}`,
+    start: slot.start.slice(0, 5),
+    end: slot.end.slice(0, 5),
+  }));
 
-  if (maPhongKham) {
-    sqlBooked += ` AND (c.maNhaSi IS NULL OR (
-      SELECT ns.maPhongKham 
-      FROM NHASI ns 
-      WHERE ns.maNhaSi = c.maNhaSi
-    ) = ?)`;
-    params.push(maPhongKham);
-  }
-
-  db.query(sqlBooked, params, (err, bookedRows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: "Lỗi khi đọc lịch đã đặt" });
-    }
-
-    const bookedSet = new Set(
-      bookedRows.map(row => `${row.gioBatDau}-${row.gioKetThuc}`)
-    );
-
-    // 3. Tạo kết quả: lọc ra các slot mặc định chưa bị đặt
-    const result = defaultSlots
-      .filter(slot => {
-        const key = `${slot.start}-${slot.end}`;
-        return !bookedSet.has(key);
-      })
-      .map((slot, index) => ({
-        id: `default_${index}`,
-        start: slot.start.slice(0, 5),
-        end: slot.end.slice(0, 5),
-      }));
-
-    return res.json(result);
-  });
+  return res.json(result);
 };
 
 // Lấy ca khám của bác sĩ theo ngày

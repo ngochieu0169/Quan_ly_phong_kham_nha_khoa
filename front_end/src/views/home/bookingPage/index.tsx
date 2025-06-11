@@ -43,9 +43,7 @@ const BookingPage = () => {
   useEffect(() => {
     if (selectedPhongKham) {
       axios
-        .get(
-          `http://localhost:3000/api/users/full?maQuyen=2&maPhongKham=${selectedPhongKham}`
-        )
+        .get(`http://localhost:3000/api/nhasi?maPhongKham=${selectedPhongKham}`)
         .then((res) => setDoctors(res.data))
         .catch(console.error);
     } else {
@@ -70,25 +68,26 @@ const BookingPage = () => {
 
     if (selectedSlot?.isDefault) {
       // TH2: Ca mặc định - tạo ca khám mới không có bác sĩ
+      // Lấy tên phòng khám để thêm vào mô tả
+      const selectedClinic = phongKhams.find(pk => pk.maPhongKham == selectedPhongKham);
       const payloadCa = {
         ngayKham: format(new Date(selectedDate), "dd-MM-yyyy"),
         gioBatDau: selectedSlot.start,
         gioKetThuc: selectedSlot.end,
-        moTa: formData.trieuChung,
+        moTa: `[PK${selectedPhongKham}] ${formData.trieuChung}`,
         maNhaSi: null, // Không có bác sĩ, lễ tân sẽ phân công sau
       };
 
       axios
         .post("http://localhost:3000/api/cakham", payloadCa)
         .then((res1) => {
-          console.log("res:", res1);
           const maCaKham = res1.data.data.insertId;
           const payloadLich = {
             ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
             trieuChung: formData.trieuChung,
-            trangThai: "chờ",
+            trangThai: "Chờ",
             maBenhNhan: user.maNguoiDung,
-            maNguoiDat: isRegisterForOther ? user.tenTaiKhoan : user.tenTaiKhoan,
+            maNguoiDat: user.tenTaiKhoan,
             quanHeBenhNhanVaNguoiDat: isRegisterForOther
               ? formData.moiQuanHe
               : null,
@@ -108,9 +107,9 @@ const BookingPage = () => {
       const payloadLich = {
         ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
         trieuChung: formData.trieuChung,
-        trangThai: "chờ",
+        trangThai: "Chờ",
         maBenhNhan: user.maNguoiDung,
-        maNguoiDat: isRegisterForOther ? user.tenTaiKhoan : user.tenTaiKhoan,
+        maNguoiDat: user.tenTaiKhoan,
         quanHeBenhNhanVaNguoiDat: isRegisterForOther
           ? formData.moiQuanHe
           : null,
@@ -252,8 +251,8 @@ const BookingPage = () => {
                         <option value="">-- Không chọn bác sĩ --</option>
                         {doctors.map((doc: any) => (
                           <option
-                            key={doc.maNguoiDung}
-                            value={doc.bacsiData?.maNhaSi}
+                            key={doc.maNhaSi}
+                            value={doc.maNhaSi}
                           >
                             {doc.hoTen}
                           </option>
