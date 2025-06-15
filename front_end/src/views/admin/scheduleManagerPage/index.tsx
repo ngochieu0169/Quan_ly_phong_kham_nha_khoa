@@ -63,31 +63,9 @@ function ScheduleManagerPage() {
     try {
       setLoading(true);
 
-      // Lấy tất cả lịch khám
-      const lichKhamRes = await axios.get('http://localhost:3000/api/lichkham');
-      const allAppointments = lichKhamRes.data;
-
-      // Lọc lịch khám theo ngày khám (từ ca khám)
-      const dateAppointments = [];
-
-      for (const appointment of allAppointments) {
-        // Lấy thông tin ca khám
-        const caKhamRes = await axios.get(`http://localhost:3000/api/cakham`);
-        const shifts = caKhamRes.data;
-        const caKham = shifts.find((s: any) => s.maCaKham === appointment.maCaKham);
-
-        if (caKham) {
-          const caKhamDate = new Date(caKham.ngayKham).toISOString().split('T')[0];
-          if (caKhamDate === selectedDate) {
-            dateAppointments.push({
-              ...appointment,
-              gioBatDau: caKham.gioBatDau,
-              gioKetThuc: caKham.gioKetThuc,
-              maNhaSi: caKham.maNhaSi
-            });
-          }
-        }
-      }
+      // Lấy ca khám theo ngày đã chọn
+      const caKhamRes = await axios.get(`http://localhost:3000/api/cakham/by-date?date=${selectedDate}`);
+      const shiftsWithAppointments = caKhamRes.data;
 
       // Lấy thông tin bệnh nhân và bác sĩ
       const [patientsRes, dentistsRes] = await Promise.all([
@@ -95,18 +73,28 @@ function ScheduleManagerPage() {
         axios.get('http://localhost:3000/api/users/full?maQuyen=2')  // Bác sĩ
       ]);
 
-      // Làm giàu dữ liệu
-      const enrichedAppointments = dateAppointments.map((appointment: any) => {
-        const patient = patientsRes.data.find((p: any) => p.maNguoiDung === appointment.maBenhNhan);
-        const dentist = dentistsRes.data.find((d: any) => d.bacsiData?.maNhaSi === appointment.maNhaSi);
+      // Lọc và làm giàu dữ liệu cho các lịch khám đã có
+      const enrichedAppointments = shiftsWithAppointments
+        .filter((shift: any) => shift.maLichKham) // Chỉ lấy ca khám đã có lịch khám
+        .map((shift: any) => {
+          const patient = patientsRes.data.find((p: any) => p.maNguoiDung === shift.maBenhNhan);
+          const dentist = dentistsRes.data.find((d: any) => d.bacsiData?.maNhaSi === shift.maNhaSi);
 
-        return {
-          ...appointment,
-          tenBenhNhan: patient?.hoTen,
-          soDienThoai: patient?.soDienThoai,
-          tenNhaSi: dentist?.hoTen
-        };
-      });
+          return {
+            maLichKham: shift.maLichKham,
+            maBenhNhan: shift.maBenhNhan,
+            maCaKham: shift.maCaKham,
+            trieuChung: shift.trieuChung,
+            ngayDatLich: shift.ngayKham, // Use ngayKham as the appointment date
+            trangThai: shift.trangThaiLich || 'Chờ',
+            gioBatDau: shift.gioBatDau,
+            gioKetThuc: shift.gioKetThuc,
+            maNhaSi: shift.maNhaSi,
+            tenBenhNhan: patient?.hoTen,
+            soDienThoai: patient?.soDienThoai,
+            tenNhaSi: dentist?.hoTen || shift.tenNhaSi
+          };
+        });
 
       setAppointments(enrichedAppointments);
       setPatients(patientsRes.data);

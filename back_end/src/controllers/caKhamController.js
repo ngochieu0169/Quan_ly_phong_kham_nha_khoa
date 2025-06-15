@@ -56,9 +56,17 @@ exports.create = (req, res) => {
     maNhaSi = null;
   }
 
-  // Chuyển đổi định dạng từ "DD-MM-YYYY" → "YYYY-MM-DD"
-  const [day, month, year] = ngayKham.split("-");
-  const formattedNgayKham = `${year}-${month}-${day}`;
+  // Kiểm tra format ngày khám - nếu đã là YYYY-MM-DD thì giữ nguyên
+  let formattedNgayKham = ngayKham;
+  if (ngayKham.includes("-")) {
+    const parts = ngayKham.split("-");
+    if (parts[0].length === 2) {
+      // Format DD-MM-YYYY, chuyển thành YYYY-MM-DD
+      const [day, month, year] = parts;
+      formattedNgayKham = `${year}-${month}-${day}`;
+    }
+    // Nếu parts[0].length === 4 thì đã là YYYY-MM-DD, giữ nguyên
+  }
 
   const sql = `INSERT INTO CAKHAM (ngayKham, gioBatDau, gioKetThuc, moTa, maNhaSi) 
                VALUES (?, ?, ?, ?, ?)`;
@@ -184,5 +192,79 @@ exports.getBacSiSchedule = (req, res) => {
     }));
 
     res.json(result);
+  });
+};
+
+// Lấy ca khám theo ngày cụ thể
+exports.getByDate = (req, res) => {
+  const { date } = req.query;
+
+  if (!date) {
+    return res.status(400).json({ error: "Thiếu tham số ngày (date=YYYY-MM-DD)" });
+  }
+
+  const sql = `
+    SELECT 
+      CK.maCaKham,
+      CK.ngayKham,
+      CK.gioBatDau,
+      CK.gioKetThuc,
+      CK.moTa,
+      CK.maNhaSi,
+      -- Thông tin lịch khám nếu đã có booking
+      LK.maLichKham,
+      LK.trangThai AS trangThaiLich,
+      LK.maBenhNhan,
+      LK.trieuChung,
+      -- Thông tin bác sĩ
+      ND.hoTen AS tenNhaSi
+    FROM CAKHAM CK
+    LEFT JOIN LICHKHAM LK ON CK.maCaKham = LK.maCaKham
+    LEFT JOIN NHASI NS ON CK.maNhaSi = NS.maNhaSi
+    LEFT JOIN NGUOIDUNG ND ON NS.maNguoiDung = ND.maNguoiDung
+    WHERE DATE(CK.ngayKham) = ?
+    ORDER BY CK.gioBatDau ASC
+  `;
+
+  db.query(sql, [date], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+};
+
+// Lấy ca khám chưa được phân công bác sĩ (maNhaSi = null) kèm thông tin bệnh nhân
+exports.getPendingAssignments = (req, res) => {
+  const sql = `
+    SELECT 
+      CK.maCaKham,
+      CK.ngayKham,
+      CK.gioBatDau,
+      CK.gioKetThuc,
+      CK.moTa,
+      CK.maNhaSi,
+      -- Thông tin lịch khám
+      LK.maLichKham,
+      LK.trangThai AS trangThaiLich,
+      LK.maBenhNhan,
+      LK.trieuChung,
+      LK.ngayDatLich,
+      -- Thông tin bệnh nhân
+      ND.hoTen AS tenBenhNhan,
+      ND.soDienThoai,
+      ND.eMail
+    FROM CAKHAM CK
+    INNER JOIN LICHKHAM LK ON CK.maCaKham = LK.maCaKham
+    INNER JOIN NGUOIDUNG ND ON LK.maBenhNhan = ND.maNguoiDung
+    WHERE CK.maNhaSi IS NULL
+      AND CK.ngayKham >= CURDATE()
+    ORDER BY CK.ngayKham ASC, CK.gioBatDau ASC
+  `;
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('Error getting pending assignments:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
   });
 };

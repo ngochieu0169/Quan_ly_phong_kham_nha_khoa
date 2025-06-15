@@ -139,6 +139,9 @@ const TheHeader: React.FC = () => {
                       <Link className="dropdown-item" to="/my-appointments">Lịch đã đặt</Link>
                     </li>
                     <li>
+                      <Link className="dropdown-item" to="/my-bills">Hóa đơn</Link>
+                    </li>
+                    <li>
                       <a className="dropdown-item" href='#' onClick={handleLogout} >Đăng xuất</a>
                     </li>
 

@@ -131,6 +131,13 @@ function ReceptionistDashboard() {
             color: 'dark',
             path: '/le-tan/notifications',
             description: 'Gửi thông báo'
+        },
+        {
+            title: 'Phân công bác sĩ',
+            icon: 'icofont-doctor',
+            color: 'purple',
+            path: '/le-tan/assignments',
+            description: 'Phân công bác sĩ cho ca khám'
         }
     ];
 

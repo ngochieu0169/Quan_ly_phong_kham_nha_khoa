@@ -1,5 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { updateUser } from "../../store/user";
 // import icon
 import {
   FaHome,
@@ -22,8 +23,16 @@ interface ContainerManagerProps {
 
 function ContainerManager({ children }: ContainerManagerProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const user = useSelector((state: any) => state.user.user);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    dispatch(updateUser({}));
+    navigate('/login');
+  };
 
   const adminMenu = [
     { path: "/admin/dashboard", label: "Tổng quan", icon: <FaHome /> },
@@ -77,30 +86,34 @@ function ContainerManager({ children }: ContainerManagerProps) {
   // bệnh nhân
   const patientMenu = [
     {
-      path: "/patient/profile",
+      path: "/profile",
       label: "Thông tin tài khoản",
       icon: <FaClinicMedical />,
     },
     {
-      path: "/patient/appointments",
+      path: "/my-appointments",
       label: "Lịch khám của tôi",
-      icon: <FaClinicMedical />,
+      icon: <FaCalendarAlt />,
     },
-    { path: "/patient/bills", label: "Hóa đơn", icon: <FaClinicMedical /> },
-    { path: "/notification", label: "Thông báo", icon: <FaClinicMedical /> },
-    { path: "/", label: "Đăng xuất", icon: <FaClinicMedical /> },
+    { path: "/my-bills", label: "Hóa đơn", icon: <FaFileInvoice /> },
+    { path: "/notification", label: "Thông báo", icon: <FaBell /> },
+    { path: "/", label: "Đăng xuất", icon: <FaSignOutAlt /> },
   ];
 
   // lễ tân
   const receptionistMenu = [
+    { path: "/le-tan", label: "Dashboard", icon: <FaHome /> },
+    { path: "/profile", label: "Thông tin cá nhân", icon: <FaUserCog /> },
     { path: "/le-tan/appointments", label: "Quản lý lịch khám", icon: <FaCalendarAlt /> },
     { path: "/le-tan/appointments/create", label: "Tạo lịch khám mới", icon: <FaCalendarAlt /> },
+    { path: "/le-tan/doctor-schedule", label: "Lịch làm việc bác sĩ", icon: <FaUsers /> },
     { path: "/le-tan/patients", label: "Quản lý bệnh nhân", icon: <FaUsers /> },
     { path: "/le-tan/checkin", label: "Xác nhận đến khám", icon: <FaCheckCircle /> },
     { path: "/le-tan/medical-records", label: "Phiếu khám bệnh", icon: <FaPrescriptionBottleAlt /> },
     { path: "/le-tan/billing", label: "Thanh toán", icon: <FaFileInvoice /> },
     { path: "/le-tan/shifts", label: "Sắp xếp ca khám", icon: <FaClock /> },
-    { path: "/le-tan/notifications", label: "Thông báo", icon: <FaBell /> },
+    { path: "/le-tan/notifications", label: "Gửi thông báo", icon: <FaBell /> },
+    { path: "/notification", label: "Thông báo của tôi", icon: <FaBell /> },
     { path: "/", label: "Đăng xuất", icon: <FaSignOutAlt /> },
   ];
 
@@ -136,16 +149,27 @@ function ContainerManager({ children }: ContainerManagerProps) {
         <ul className="nav flex-column">
           {menuItems.map((item) => (
             <li key={item.path} className="nav-item mb-2">
-              <Link
-                to={item.path}
-                className={`nav-link d-flex align-items-center gap-2 ${location.pathname === item.path
-                  ? "active text-primary fw-bold"
-                  : "text-white"
-                  }`}
-              >
-                <span>{item.icon}</span>
-                <span className="ml-2">{item.label}</span>
-              </Link>
+              {item.label === "Đăng xuất" ? (
+                <button
+                  onClick={handleLogout}
+                  className="nav-link d-flex align-items-center gap-2 text-white border-0 bg-transparent w-100 text-start"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span>{item.icon}</span>
+                  <span className="ml-2">{item.label}</span>
+                </button>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={`nav-link d-flex align-items-center gap-2 ${location.pathname === item.path
+                    ? "active text-primary fw-bold"
+                    : "text-white"
+                    }`}
+                >
+                  <span>{item.icon}</span>
+                  <span className="ml-2">{item.label}</span>
+                </Link>
+              )}
             </li>
           ))}
         </ul>

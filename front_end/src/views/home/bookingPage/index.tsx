@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import EmptySchedule from "./emptySchedule";
 import { format } from "date-fns";
@@ -32,6 +33,63 @@ const BookingPage = () => {
   });
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isLoggedIn = Boolean(user && user.tenTaiKhoan);
+
+  // Nếu chưa đăng nhập, hiển thị thông báo
+  if (!isLoggedIn) {
+    return (
+      <div>
+        <section className="page-title bg-1">
+          <div className="overlay"></div>
+          <div className="container">
+            <div className="row">
+              <div className="col-md-12">
+                <div className="block text-center">
+                  <span className="text-white">Đăng ký</span>
+                  <h1 className="text-capitalize mb-5 text-lg">
+                    Đặt lịch nha khoa
+                  </h1>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="container">
+            <div className="row justify-content-center">
+              <div className="col-lg-8">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <i className="icofont-lock text-primary" style={{ fontSize: '4rem' }}></i>
+                  </div>
+                  <h3 className="mb-3">Yêu cầu đăng nhập</h3>
+                  <p className="mb-4 text-muted">
+                    Để đặt lịch khám, bạn cần đăng nhập vào tài khoản của mình.
+                    Nếu chưa có tài khoản, vui lòng đăng ký để sử dụng dịch vụ.
+                  </p>
+                  <div className="d-flex justify-content-center gap-3">
+                    <Link to="/login" className="btn btn-main btn-round-full">
+                      <i className="icofont-sign-in me-2"></i>Đăng nhập
+                    </Link>
+                    <Link to="/register" className="btn btn-main-2 btn-round-full">
+                      <i className="icofont-ui-user me-2"></i>Đăng ký
+                    </Link>
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-muted">
+                      <i className="icofont-phone me-2"></i>
+                      Hoặc gọi hotline: <strong>+84 789 1256</strong> để được hỗ trợ đặt lịch
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   useEffect(() => {
     axios
@@ -71,7 +129,7 @@ const BookingPage = () => {
       // Lấy tên phòng khám để thêm vào mô tả
       const selectedClinic = phongKhams.find(pk => pk.maPhongKham == selectedPhongKham);
       const payloadCa = {
-        ngayKham: format(new Date(selectedDate), "dd-MM-yyyy"),
+        ngayKham: format(new Date(selectedDate), "yyyy-MM-dd"),
         gioBatDau: selectedSlot.start,
         gioKetThuc: selectedSlot.end,
         moTa: `[PK${selectedPhongKham}] ${formData.trieuChung}`,
@@ -83,7 +141,7 @@ const BookingPage = () => {
         .then((res1) => {
           const maCaKham = res1.data.data.insertId;
           const payloadLich = {
-            ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
+            ngayDatLich: format(Date.now(), "yyyy-MM-dd"),
             trieuChung: formData.trieuChung,
             trangThai: "Chờ",
             maBenhNhan: user.maNguoiDung,
@@ -105,7 +163,7 @@ const BookingPage = () => {
     } else {
       // TH1: Ca khám có sẵn của bác sĩ - sử dụng ca khám đó
       const payloadLich = {
-        ngayDatLich: format(Date.now(), "dd-MM-yyyy"),
+        ngayDatLich: format(Date.now(), "yyyy-MM-dd"),
         trieuChung: formData.trieuChung,
         trangThai: "Chờ",
         maBenhNhan: user.maNguoiDung,
@@ -323,6 +381,8 @@ const BookingPage = () => {
                         name="tuoi"
                         value={formData.tuoi}
                         onChange={handleInputChange}
+                        min="1"
+                        max="150"
                         required
                       />
                     </div>

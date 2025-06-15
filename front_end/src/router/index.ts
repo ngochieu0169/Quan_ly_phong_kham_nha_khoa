@@ -7,11 +7,14 @@ import DoctorProfile from "../views/auth/doctorProfile";
 import DoctorShiftCalendar from "../views/auth/doctorShiftCalendar";
 import LoginPage from "../views/auth/login";
 import MyPatients from "../views/auth/myPatien";
+import MyAppointments from "../views/auth/myAppointments";
+import MyBills from "../views/auth/myBills";
 import NotificationPage from "../views/auth/notifycation";
 import PersonalPage from "../views/auth/personal";
 import RegisterPage from "../views/auth/register";
 import RegisterShiftPage from "../views/auth/registerShiftPage";
-import HomePage from "../views/home";
+import RedirectPage from "../views/auth/redirect";
+import HomePage from "../views/home/homePage";
 import BookingPage from "../views/home/bookingPage";
 import ClinicsPage from "../views/home/clinicsPage";
 import ServicesPage from "../views/home/servicesPage";
@@ -26,12 +29,19 @@ import ReceptionistBilling from "../views/receptionist/billing";
 import ReceptionistShifts from "../views/receptionist/shifts";
 import ReceptionistMedicalRecords from "../views/receptionist/medical-records";
 import ReceptionistNotifications from "../views/receptionist/notifications";
+import DoctorScheduleManager from "../views/receptionist/doctorSchedule";
+import PendingAssignments from "../views/receptionist/assignments";
 
 
 const publicRoutes = [
   {
-    name: "home",
+    name: "redirect",
     path: "/",
+    component: RedirectPage,
+  },
+  {
+    name: "home",
+    path: "/home",
     component: HomePage,
   },
   {
@@ -75,6 +85,11 @@ const privateRoutes = [
     component: PersonalPage
   },
   {
+    name: "profile",
+    path: "/profile",
+    component: PersonalPage
+  },
+  {
     name: "clinic",
     path: "/clinic",
     component: ClinicManagerPage,
@@ -104,6 +119,16 @@ const privateRoutes = [
     name: "patients",
     path: "/doctor/patients",
     component: MyPatients,
+  },
+  {
+    name: "my-appointments",
+    path: "/my-appointments",
+    component: MyAppointments,
+  },
+  {
+    name: "my-bills",
+    path: "/my-bills",
+    component: MyBills,
   },
   {
     name: "regis shift",
@@ -153,6 +178,11 @@ const privateRoutes = [
     component: ReceptionistShifts,
   },
   {
+    name: "doctor schedule manager",
+    path: "/le-tan/doctor-schedule",
+    component: DoctorScheduleManager,
+  },
+  {
     name: "receptionist medical records",
     path: "/le-tan/medical-records",
     component: ReceptionistMedicalRecords,
@@ -161,6 +191,11 @@ const privateRoutes = [
     name: "receptionist notifications",
     path: "/le-tan/notifications",
     component: ReceptionistNotifications,
+  },
+  {
+    name: "pending assignments",
+    path: "/le-tan/assignments",
+    component: PendingAssignments,
   },
 
   // {

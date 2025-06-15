@@ -65,25 +65,8 @@ function LoginPage() {
 
         dispatch(updateUser(data.user));
 
-        // Điều hướng theo quyền
-        switch (data.user.maQuyen) {
-          case 1:
-            navigate("/admin");
-            break;
-          case 2:
-            navigate("/doctor/profile");
-            break;
-          case 3:
-            navigate("/le-tan");
-            break;
-          case 4:
-            navigate("/");
-            break;
-          case 5:
-            navigate("/phongkham");
-            break;
-          default:
-        }
+        // Điều hướng về trang chủ để tự động redirect
+        navigate("/");
 
       } else {
         alert(data.message || "Đăng nhập thất bại");

@@ -19,20 +19,20 @@ exports.getAll = (req, res) => {
     const ids = lichs.map(l => l.maLichKham);
     if (ids.length === 0) return res.json([]);
     db.query(
-      `SELECT * FROM PHIEUKHAM WHERE maLichKham IN (?)`, 
-      [ids], 
+      `SELECT * FROM PHIEUKHAM WHERE maLichKham IN (?)`,
+      [ids],
       (err2, phieus) => {
         if (err2) return res.status(500).json({ error: err2.message });
         // nhóm phiếu theo lịch
-        const map = phieus.reduce((a,p) => {
-          a[p.maLichKham] = a[p.maLichKham]||[];
+        const map = phieus.reduce((a, p) => {
+          a[p.maLichKham] = a[p.maLichKham] || [];
           a[p.maLichKham].push(p);
           return a;
         }, {});
         // gắn vào
         const result = lichs.map(lk => ({
           ...lk,
-          phieuKhams: map[lk.maLichKham]||[]
+          phieuKhams: map[lk.maLichKham] || []
         }));
         res.json(result);
       }
@@ -60,8 +60,8 @@ exports.getById = (req, res) => {
     if (rows.length === 0) return res.status(404).json({ message: 'Không tìm thấy lịch' });
     const lich = rows[0];
     db.query(
-      `SELECT * FROM PHIEUKHAM WHERE maLichKham = ?`, 
-      [id], 
+      `SELECT * FROM PHIEUKHAM WHERE maLichKham = ?`,
+      [id],
       (err2, phieus) => {
         if (err2) return res.status(500).json({ error: err2.message });
         lich.phieuKhams = phieus;
@@ -75,23 +75,68 @@ exports.getById = (req, res) => {
 exports.create = (req, res) => {
   const { ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham } = req.body;
 
-    // Chuyển đổi định dạng từ "DD-MM-YYYY" → "YYYY-MM-DD"
-    const [day, month, year] = ngayDatLich.split("-");
-    const formattedNgayKham = `${year}-${month}-${day}`;
+  console.log('=== DEBUG lichKham create ===');
+  console.log('Request body:', req.body);
+  console.log('ngayDatLich:', ngayDatLich, 'type:', typeof ngayDatLich);
 
-  const sql = `
-    INSERT INTO LICHKHAM
-      (ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+  // Validate that the appointment date matches the shift's examination date
+  const validateShiftDate = `
+    SELECT ngayKham FROM CAKHAM WHERE maCaKham = ?
   `;
-  db.query(
-    sql,
-    [formattedNgayKham, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ message: 'Tạo lịch khám thành công', maLichKham: result.insertId });
+
+  db.query(validateShiftDate, [maCaKham], (err, shiftRows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (shiftRows.length === 0) {
+      return res.status(400).json({ message: 'Ca khám không tồn tại' });
     }
-  );
+
+    // Validate ngayDatLich format
+    if (!ngayDatLich) {
+      return res.status(400).json({ message: 'Ngày đặt lịch không được để trống' });
+    }
+
+    // Try to parse the date and handle invalid dates
+    let appointmentDate;
+    try {
+      const dateObj = new Date(ngayDatLich);
+      if (isNaN(dateObj.getTime())) {
+        throw new Error('Invalid date');
+      }
+      appointmentDate = dateObj.toISOString().split('T')[0];
+    } catch (error) {
+      return res.status(400).json({
+        message: 'Định dạng ngày đặt lịch không hợp lệ',
+        receivedDate: ngayDatLich
+      });
+    }
+
+    const shiftDate = new Date(shiftRows[0].ngayKham).toISOString().split('T')[0];
+
+    if (shiftDate !== appointmentDate) {
+      return res.status(400).json({
+        message: 'Ngày đặt lịch không khớp với ngày khám của ca được chọn',
+        shiftDate: shiftDate,
+        appointmentDate: appointmentDate
+      });
+    }
+
+    // Format date for database (ensure YYYY-MM-DD format)
+    const formattedNgayDatLich = new Date(ngayDatLich).toISOString().split('T')[0];
+
+    const sql = `
+      INSERT INTO LICHKHAM
+        (ngayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    db.query(
+      sql,
+      [formattedNgayDatLich, trieuChung, trangThai, maBenhNhan, maNguoiDat, quanHeBenhNhanVaNguoiDat, maCaKham],
+      (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ message: 'Tạo lịch khám thành công', maLichKham: result.insertId });
+      }
+    );
+  });
 };
 
 // PUT cập nhật Lịch Khám
@@ -133,6 +178,48 @@ exports.confirmBooking = (req, res) => {
   });
 };
 
+
+// Lấy lịch khám chưa có bác sĩ (ca khám có maNhaSi = null)
+exports.getPendingDoctorAssignment = (req, res) => {
+  const sql = `
+    SELECT 
+      LK.maLichKham,
+      LK.ngayDatLich,
+      LK.trieuChung,
+      LK.trangThai,
+      LK.maBenhNhan,
+      LK.maNguoiDat,
+      LK.quanHeBenhNhanVaNguoiDat,
+      LK.maCaKham,
+      -- Thông tin ca khám
+      CK.ngayKham,
+      CK.gioBatDau,
+      CK.gioKetThuc,
+      CK.moTa,
+      CK.maNhaSi,
+      -- Thông tin bệnh nhân
+      ND.hoTen AS tenBenhNhan,
+      ND.soDienThoai,
+      ND.eMail,
+      ND.gioiTinh,
+      ND.ngaySinh
+    FROM LICHKHAM LK
+    INNER JOIN CAKHAM CK ON LK.maCaKham = CK.maCaKham
+    INNER JOIN NGUOIDUNG ND ON LK.maBenhNhan = ND.maNguoiDung
+    WHERE CK.maNhaSi IS NULL
+      AND CK.ngayKham >= CURDATE()
+      AND LK.trangThai IN ('Chờ', 'Đã đặt')
+    ORDER BY CK.ngayKham ASC, CK.gioBatDau ASC
+  `;
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('Error getting pending doctor assignments:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+};
 
 // DELETE Lịch Khám
 exports.delete = (req, res) => {
