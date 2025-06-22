@@ -92,7 +92,7 @@ function ScheduleManagerPage() {
             maNhaSi: shift.maNhaSi,
             tenBenhNhan: patient?.hoTen,
             soDienThoai: patient?.soDienThoai,
-            tenNhaSi: dentist?.hoTen || shift.tenNhaSi
+            tenNhaSi: dentist?.hoTen || (shift.maNhaSi ? 'Chưa tìm thấy thông tin bác sĩ' : 'Chưa phân công')
           };
         });
 
@@ -276,7 +276,7 @@ function ScheduleManagerPage() {
 
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="mb-0">Quản lý lịch khám</h4>
+        <h4 className="mb-0">Cập nhật lịch khám</h4>
         <div className="d-flex align-items-center gap-3">
           <input
             type="date"

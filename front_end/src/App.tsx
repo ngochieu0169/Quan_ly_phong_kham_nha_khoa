@@ -1,12 +1,33 @@
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Container from "./components/layout/Container";
 import ContainerManager from "./components/layout/ContainerManager";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 import { publicRoutes, privateRoutes } from "./router";
 import NotFoundPage from "./views/errors";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { updateUser } from "./store/user";
 
 function App() {
+  const dispatch = useDispatch();
+
+  // Khởi tạo user state từ localStorage khi app start
+  useEffect(() => {
+    const saved = localStorage.getItem('user');
+    if (saved) {
+      try {
+        const userObj = JSON.parse(saved);
+        if (userObj.tenTaiKhoan) {
+          dispatch(updateUser(userObj));
+        }
+      } catch {
+        localStorage.removeItem('user');
+      }
+    }
+  }, [dispatch]);
+
   return (
     <Router>
       <div className="App">
@@ -33,9 +54,11 @@ function App() {
                 key={index}
                 path={route.path}
                 element={
-                  <ContainerManager>
-                    <Page />
-                  </ContainerManager>
+                  <ProtectedRoute>
+                    <ContainerManager>
+                      <Page />
+                    </ContainerManager>
+                  </ProtectedRoute>
                 }
               />
             );

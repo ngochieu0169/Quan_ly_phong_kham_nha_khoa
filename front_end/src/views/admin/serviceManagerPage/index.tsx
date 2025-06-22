@@ -170,7 +170,7 @@ function ServiceManagerPage() {
     return (
         <div className="container-fluid">
             <ToastContainer />
-            <h4 className="mb-4">Quản lý dịch vụ nha khoa</h4>
+            <h4 className="mb-4">Cập nhật dịch vụ nha khoa</h4>
 
             {/* Search and Filter */}
             <div className="row mb-3">

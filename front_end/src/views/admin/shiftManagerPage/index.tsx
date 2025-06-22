@@ -199,7 +199,7 @@ function ShiftManagerPage() {
     return (
         <div className="container-fluid">
             <ToastContainer />
-            <h4 className="mb-4">Quản lý ca khám</h4>
+            <h4 className="mb-4">Cập nhật ca khám</h4>
 
             {/* Date selector and Add button */}
             <div className="row mb-4">

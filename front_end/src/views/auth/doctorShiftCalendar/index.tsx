@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { shiftService, appointmentService, userService } from '../../../services';
+import { shiftService, appointmentService, userService, shiftServiceExtended } from '../../../services';
 
 interface ShiftCalendarItem {
   maCaKham: number;
@@ -36,59 +36,46 @@ function DoctorShiftCalendar() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('=== DEBUG DoctorShiftCalendar ===');
+    console.log('User from localStorage:', user);
     setCurrentUser(user);
-    if (user?.nhaSi) {
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && (currentUser.nhaSi?.maNhaSi || currentUser.bacsiData?.maNhaSi)) {
       fetchShifts();
     }
-  }, [currentDate]);
+  }, [currentDate, currentUser]);
 
   const fetchShifts = async () => {
     try {
       setLoading(true);
 
+      // Xử lý cả hai cấu trúc dữ liệu: nhaSi và bacsiData
+      const doctorId = currentUser?.nhaSi?.maNhaSi || currentUser?.bacsiData?.maNhaSi;
+
+      if (!doctorId) {
+        toast.error('Không tìm thấy thông tin bác sĩ');
+        return;
+      }
+
       // Get start and end dates for current view
       const { startDate, endDate } = getViewDateRange();
 
-      // Fetch shifts for the date range
-      const shiftsPromises = [];
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        shiftsPromises.push(
-          shiftService.all({
-            ngayKham: dateStr,
-            maNhaSi: currentUser?.nhaSi?.maNhaSi
-          })
-        );
-      }
-
-      const shiftsResponses = await Promise.all(shiftsPromises);
-      const allShifts = shiftsResponses.flatMap(res => res.data);
-
-      // Get appointments for these shifts
-      const appointmentsRes = await appointmentService.all();
-      const allAppointments = appointmentsRes.data;
-
-      // Get patients
-      const patientIds = [...new Set(allAppointments.map((a: any) => a.maBenhNhan))] as number[];
-      const patientsPromises = patientIds.map(id => userService.get(id));
-      const patientsResponses = await Promise.all(patientsPromises);
-      const patients = patientsResponses.map(res => res.data);
-
-      // Enrich shifts with appointment and patient data
-      const enrichedShifts = allShifts.map((shift: any) => {
-        const appointment = allAppointments.find((a: any) => a.maCaKham === shift.maCaKham);
-        const patient = appointment ? patients.find(p => p.maNguoiDung === appointment.maBenhNhan) : null;
-
-        return {
-          ...shift,
-          maLichKham: appointment?.maLichKham,
-          maBenhNhan: appointment?.maBenhNhan,
-          tenBenhNhan: patient?.hoTen,
-          soDienThoai: patient?.soDienThoai,
-          trieuChung: appointment?.trieuChung,
-          trangThai: appointment?.trangThai
-        };
+      // Sử dụng API mới để lấy ca khám theo bác sĩ với khoảng thời gian
+      const shiftsRes = await shiftServiceExtended.getByDoctor(doctorId, {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
       });
+
+      // Data đã được enriched từ API
+      const enrichedShifts = shiftsRes.data.map((shift: any) => ({
+        ...shift,
+        tenBenhNhan: shift.tenBenhNhan || null,
+        soDienThoai: shift.soDienThoai || null,
+        trieuChung: shift.trieuChung || null,
+        trangThai: shift.trangThaiLich || null
+      }));
 
       setShifts(enrichedShifts);
     } catch (error) {
@@ -183,11 +170,11 @@ function DoctorShiftCalendar() {
   const getShiftStatusColor = (shift: ShiftCalendarItem) => {
     if (shift.maLichKham) {
       if (shift.trangThai === 'Hoàn thành') return 'success';
-      if (shift.trangThai === 'Xác nhận') return 'primary';
-      if (shift.trangThai === 'Chờ') return 'warning';
+      if (shift.trangThai === 'Xác nhận') return 'info';
+      if (shift.trangThai === 'Chờ') return 'warning text-dark';
       if (shift.trangThai === 'Hủy') return 'danger';
     }
-    return 'secondary'; // Empty shift
+    return 'light text-dark border'; // Empty shift
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -391,13 +378,13 @@ function DoctorShiftCalendar() {
           <h6 className="mb-3">Chú thích:</h6>
           <div className="row">
             <div className="col-md-2">
-              <span className="badge bg-secondary me-2">Ca trống</span>
+              <span className="badge bg-light text-dark border me-2">Ca trống</span>
             </div>
             <div className="col-md-2">
-              <span className="badge bg-warning me-2">Chờ xác nhận</span>
+              <span className="badge bg-warning text-dark me-2">Chờ xác nhận</span>
             </div>
             <div className="col-md-2">
-              <span className="badge bg-primary me-2">Đã xác nhận</span>
+              <span className="badge bg-info me-2">Đã xác nhận</span>
             </div>
             <div className="col-md-2">
               <span className="badge bg-success me-2">Hoàn thành</span>

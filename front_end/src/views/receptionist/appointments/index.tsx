@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { appointmentService, shiftService, userService, userServiceExtended, dentistService } from '../../../services';
+import { appointmentService, userService, userServiceExtended } from '../../../services';
 
 interface Appointment {
     maLichKham: number;
@@ -78,15 +78,13 @@ function ReceptionistAppointments() {
         try {
             setLoading(true);
 
-            const [appointmentRes, patientRes, shiftRes] = await Promise.all([
+            const [appointmentRes, patientRes] = await Promise.all([
                 appointmentService.all(),
-                userServiceExtended.getFullList({ maQuyen: 4 }),
-                shiftService.all()
+                userServiceExtended.getFullList({ maQuyen: 4 })
             ]);
 
             const appointments = appointmentRes.data;
             const patients = patientRes.data;
-            const shifts = shiftRes.data;
 
             // Filter appointments by selected date
             const dateAppointments = appointments.filter((apt: any) => {
@@ -94,26 +92,22 @@ function ReceptionistAppointments() {
                 return aptDate === selectedDate;
             });
 
-            // Enrich appointments with patient and shift info
+            // Enrich appointments with patient info - tenNhaSi đã có từ API
             const enrichedAppointments = dateAppointments.map((apt: any) => {
                 const patient = patients.find((p: any) => p.maNguoiDung === apt.maBenhNhan);
-                const shift = shifts.find((s: any) => s.maCaKham === apt.maCaKham);
 
                 return {
                     ...apt,
                     tenBenhNhan: patient?.hoTen,
                     soDienThoai: patient?.soDienThoai,
-                    gioBatDau: shift?.gioBatDau,
-                    gioKetThuc: shift?.gioKetThuc,
-                    tenNhaSi: shift?.tenNhaSi
+                    // tenNhaSi, gioBatDau, gioKetThuc đã có từ API response
                 };
             });
 
             setAppointments(enrichedAppointments);
             setPatients(patients);
-            setShifts(shifts.filter((s: any) => s.ngayKham === selectedDate));
         } catch (error) {
-            toast.error('Không thể tải dữ liệu lịch khám');
+            toast.error('Không thể tải dữ liệu');
         } finally {
             setLoading(false);
         }
@@ -225,7 +219,7 @@ function ReceptionistAppointments() {
 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">Quản lý lịch khám</h4>
+                <h4 className="mb-0">Cập nhật lịch khám</h4>
                 <div className="d-flex align-items-center gap-3">
                     <input
                         type="date"

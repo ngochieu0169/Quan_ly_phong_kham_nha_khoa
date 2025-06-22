@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { shiftService } from '../../../services';
+import { shiftService, shiftServiceExtended } from '../../../services';
 
 interface Shift {
   maCaKham: number;
@@ -44,23 +44,42 @@ function RegisterShiftPage() {
   useEffect(() => {
     // Get current user from localStorage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('=== DEBUG RegisterShiftPage ===');
+    console.log('User from localStorage:', user);
     setCurrentUser(user);
-    fetchWeekShifts();
-  }, [selectedWeek]);
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && (currentUser.nhaSi?.maNhaSi || currentUser.bacsiData?.maNhaSi)) {
+      fetchWeekShifts();
+    }
+  }, [selectedWeek, currentUser]);
 
   const fetchWeekShifts = async () => {
     try {
-      const weekDates = getWeekDates(selectedWeek);
-      const allShifts: Shift[] = [];
+      // Xử lý cả hai cấu trúc dữ liệu: nhaSi và bacsiData
+      const doctorId = currentUser?.nhaSi?.maNhaSi || currentUser?.bacsiData?.maNhaSi;
 
-      for (const date of weekDates) {
-        const dateStr = date.toISOString().split('T')[0];
-        const res = await shiftService.all({ ngayKham: dateStr });
-        allShifts.push(...res.data);
+      if (!doctorId) {
+        toast.error('Không tìm thấy thông tin bác sĩ');
+        return;
       }
 
-      setShifts(allShifts);
+      console.log('Doctor ID:', doctorId);
+
+      const weekDates = getWeekDates(selectedWeek);
+      const startDate = weekDates[0].toISOString().split('T')[0];
+      const endDate = weekDates[6].toISOString().split('T')[0];
+
+      // Sử dụng API mới để lấy ca khám theo bác sĩ trong tuần
+      const shiftsRes = await shiftServiceExtended.getByDoctor(doctorId, {
+        startDate,
+        endDate
+      });
+
+      setShifts(shiftsRes.data);
     } catch (error) {
+      console.error('Error fetching shifts:', error);
       toast.error('Không thể tải danh sách ca khám');
     }
   };
@@ -99,7 +118,10 @@ function RegisterShiftPage() {
   };
 
   const handleRegisterShift = async () => {
-    if (!currentUser?.nhaSi) {
+    // Xử lý cả hai cấu trúc dữ liệu: nhaSi và bacsiData
+    const doctorId = currentUser?.nhaSi?.maNhaSi || currentUser?.bacsiData?.maNhaSi;
+
+    if (!doctorId) {
       toast.error('Không tìm thấy thông tin nha sĩ');
       return;
     }
@@ -116,7 +138,7 @@ function RegisterShiftPage() {
         gioBatDau: formData.gioBatDau + ':00',
         gioKetThuc: formData.gioKetThuc + ':00',
         moTa: formData.moTa,
-        maNhaSi: currentUser.nhaSi.maNhaSi
+        maNhaSi: doctorId
       };
 
       await shiftService.create(shiftData);
@@ -142,9 +164,11 @@ function RegisterShiftPage() {
 
   const getShiftsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
+    const doctorId = currentUser?.nhaSi?.maNhaSi || currentUser?.bacsiData?.maNhaSi;
+
     return shifts.filter(shift => {
       const shiftDate = new Date(shift.ngayKham).toISOString().split('T')[0];
-      return shiftDate === dateStr && shift.maNhaSi === currentUser?.nhaSi?.maNhaSi;
+      return shiftDate === dateStr && shift.maNhaSi === doctorId;
     });
   };
 

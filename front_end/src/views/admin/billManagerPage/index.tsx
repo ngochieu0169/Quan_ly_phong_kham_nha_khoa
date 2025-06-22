@@ -135,7 +135,7 @@ function BillManagerPage() {
     return (
         <div className="container-fluid">
             <ToastContainer />
-            <h4 className="mb-4">Quản lý hóa đơn</h4>
+            <h4 className="mb-4">Cập nhật hóa đơn</h4>
 
             {/* Statistics Cards */}
             <div className="row mb-4">

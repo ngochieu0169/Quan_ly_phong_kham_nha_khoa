@@ -192,7 +192,7 @@ function ReceptionistPatients() {
 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">Quản lý bệnh nhân</h4>
+                <h4 className="mb-0">Cập nhật bệnh nhân</h4>
                 <button
                     className="btn btn-primary"
                     onClick={() => setShowModal(true)}

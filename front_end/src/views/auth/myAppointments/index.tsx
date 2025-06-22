@@ -11,12 +11,14 @@ interface Appointment {
     trieuChung: string;
     ngayDatLich: string;
     trangThai: string;
-    // Extended fields
+    // API trả về thêm các trường này
     tenNhaSi?: string;
+    maNhaSi?: string;
     gioBatDau?: string;
     gioKetThuc?: string;
     ngayKham?: string;
-    tenPhongKham?: string;
+    benhNhanHoTen?: string;
+    caKhamMoTa?: string;
 }
 
 interface Shift {
@@ -59,50 +61,19 @@ function MyAppointments() {
         try {
             setLoading(true);
 
-            // Lấy tất cả lịch khám của user hiện tại
+            // Lấy tất cả lịch khám của user hiện tại từ API - đã có tenNhaSi và maNhaSi
             const appointmentRes = await appointmentService.all();
             const userAppointments = appointmentRes.data.filter(
                 (apt: any) => apt.maBenhNhan === user.maNguoiDung
             );
 
-            // Lấy thông tin ca khám và nha sĩ
-            const shiftRes = await shiftService.all();
-            const shifts = shiftRes.data;
-
-            // Làm giàu dữ liệu appointment với thông tin shift
-            const enrichedAppointments = await Promise.all(
-                userAppointments.map(async (apt: any) => {
-                    const shift = shifts.find((s: any) => s.maCaKham === apt.maCaKham);
-
-                    let doctorInfo = null;
-                    if (shift?.maNhaSi) {
-                        try {
-                            const doctorRes = await userService.get(shift.maNhaSi);
-                            doctorInfo = doctorRes.data;
-                        } catch (error) {
-                            console.error('Error fetching doctor info:', error);
-                        }
-                    }
-
-                    return {
-                        ...apt,
-                        gioBatDau: shift?.gioBatDau,
-                        gioKetThuc: shift?.gioKetThuc,
-                        ngayKham: shift?.ngayKham,
-                        tenNhaSi: doctorInfo?.hoTen || shift?.tenNhaSi || 'Chưa phân công',
-                        tenPhongKham: shift?.tenPhongKham || 'Chưa xác định'
-                    };
-                })
-            );
-
             // Sắp xếp theo ngày khám mới nhất
-            enrichedAppointments.sort((a, b) =>
+            userAppointments.sort((a: any, b: any) =>
                 new Date(b.ngayKham || b.ngayDatLich).getTime() - new Date(a.ngayKham || a.ngayDatLich).getTime()
             );
 
-            setAppointments(enrichedAppointments);
+            setAppointments(userAppointments);
         } catch (error) {
-            console.error('Error fetching appointments:', error);
             toast.error('Không thể tải danh sách lịch khám');
         } finally {
             setLoading(false);
@@ -171,7 +142,7 @@ function MyAppointments() {
                         <div className="d-flex justify-content-between align-items-center mb-4">
                             <div>
                                 <h2>Lịch đã đặt</h2>
-                                <p className="text-muted">Quản lý các lịch khám của bạn</p>
+                                <p className="text-muted">Cập nhật các lịch khám của bạn</p>
                             </div>
                         </div>
 
@@ -320,7 +291,7 @@ function MyAppointments() {
 
                                                 <div className="mb-3">
                                                     <strong><i className="icofont-location-pin me-1"></i>Phòng khám:</strong>
-                                                    <span className="text-muted ms-1">{appointment.tenPhongKham}</span>
+                                                    <span className="text-muted ms-1">{appointment.caKhamMoTa}</span>
                                                 </div>
 
                                                 <div className="d-flex gap-2 mt-3">
@@ -392,7 +363,7 @@ function MyAppointments() {
                                     </div>
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label"><strong>Phòng khám</strong></label>
-                                        <p className="form-control-plaintext">{selectedAppointment.tenPhongKham}</p>
+                                        <p className="form-control-plaintext">{selectedAppointment.caKhamMoTa}</p>
                                     </div>
                                     <div className="col-12 mb-3">
                                         <label className="form-label"><strong>Triệu chứng</strong></label>

@@ -41,11 +41,45 @@ export const userServiceExtended = {
 export const appointmentServiceExtended = {
     ...appointmentService,
     confirmBooking: (id: number, trangThai: string) =>
-        axios.put(`/api/lichkham/${id}`, { trangThai })
+        axios.put(`/api/lichkham/${id}`, { trangThai }),
+    getByDoctor: (maNhaSi: string, params?: { startDate?: string; endDate?: string }) =>
+        axios.get(`/api/lichkham/doctor/${maNhaSi}`, { params }),
+    getPatientsByDoctor: (maNhaSi: string) =>
+        axios.get(`/api/lichkham/doctor/${maNhaSi}/patients`)
 };
 
 export const shiftServiceExtended = {
     ...shiftService,
     getEmptySlots: (date: string) =>
-        axios.get('/api/cakham/lich-trong', { params: { date } })
+        axios.get('/api/cakham/lich-trong', { params: { date } }),
+    getByDoctor: (maNhaSi: string, params?: { startDate?: string; endDate?: string }) =>
+        axios.get(`/api/cakham/doctor/${maNhaSi}`, { params })
+};
+
+export const invoiceServiceExtended = {
+    ...invoiceService,
+    getByPatientAndDoctor: (maBenhNhan: number, maNhaSi: string) =>
+        axios.get(`/api/hoadon/patient/${maBenhNhan}/doctor/${maNhaSi}`),
+    createWithDetails: (data: any) =>
+        axios.post('/api/hoadon/with-details', data),
+    getDetailWithServices: (id: number) =>
+        axios.get(`/api/hoadon/${id}/details`)
+};
+
+export const clinicServiceExtended = {
+    ...clinicService,
+    getByOwner: (ownerUsername: string) =>
+        axios.get(`/api/phongkham/owner/${ownerUsername}`),
+    getRevenue: (clinicId: number, params?: { startDate?: string; endDate?: string }) =>
+        axios.get(`/api/phongkham/${clinicId}/revenue`, { params }),
+    getStats: (clinicId: number) =>
+        axios.get(`/api/phongkham/${clinicId}/stats`)
+};
+
+export const dentistServiceExtended = {
+    ...dentistService,
+    getByClinic: (clinicId: number) =>
+        axios.get(`/api/nhasi/phongkham/${clinicId}`),
+    createWithAccount: (data: any) =>
+        axios.post('/api/nhasi/with-account', data)
 }; 

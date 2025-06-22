@@ -7,11 +7,14 @@ exports.getAll = (req, res) => {
       LK.*,
       BN.hoTen AS benhNhanHoTen,
       TK.maQuyen, TK.tenTaiKhoan AS nguoiDatTK, 
-      CK.ngayKham, CK.gioBatDau, CK.gioKetThuc, CK.moTa AS caKhamMoTa
+      CK.ngayKham, CK.gioBatDau, CK.gioKetThuc, CK.moTa AS caKhamMoTa,
+      NS.hoTen AS tenNhaSi,
+      NS.maNhaSi
     FROM LICHKHAM LK
     JOIN NGUOIDUNG BN ON LK.maBenhNhan = BN.maNguoiDung
     JOIN TAIKHOAN   TK ON LK.maNguoiDat = TK.tenTaiKhoan
     JOIN CAKHAM     CK ON LK.maCaKham   = CK.maCaKham
+    LEFT JOIN NHASI NS ON CK.maNhaSi    = NS.maNhaSi
     ORDER BY LK.ngayDatLich DESC
   `;
   db.query(sql, (err, lichs) => {
@@ -48,11 +51,14 @@ exports.getById = (req, res) => {
       LK.*,
       BN.*, 
       TK.tenTaiKhoan AS nguoiDatTK, TK.maQuyen,
-      CK.ngayKham, CK.gioBatDau, CK.gioKetThuc, CK.moTa AS caKhamMoTa
+      CK.ngayKham, CK.gioBatDau, CK.gioKetThuc, CK.moTa AS caKhamMoTa,
+      NS.hoTen AS tenNhaSi,
+      NS.maNhaSi
     FROM LICHKHAM LK
     JOIN NGUOIDUNG BN ON LK.maBenhNhan = BN.maNguoiDung
     JOIN TAIKHOAN   TK ON LK.maNguoiDat = TK.tenTaiKhoan
     JOIN CAKHAM     CK ON LK.maCaKham   = CK.maCaKham
+    LEFT JOIN NHASI NS ON CK.maNhaSi    = NS.maNhaSi
     WHERE LK.maLichKham = ?
   `;
   db.query(sql, [id], (err, rows) => {
@@ -228,5 +234,101 @@ exports.delete = (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy lịch' });
     res.json({ message: 'Xóa lịch khám thành công' });
+  });
+};
+
+// Lấy lịch khám theo bác sĩ cụ thể
+exports.getByDoctor = (req, res) => {
+  const { maNhaSi } = req.params;
+  const { startDate, endDate } = req.query;
+
+  let sql = `
+    SELECT 
+      LK.maLichKham,
+      LK.ngayDatLich,
+      LK.trieuChung,
+      LK.trangThai,
+      LK.maBenhNhan,
+      LK.maNguoiDat,
+      LK.quanHeBenhNhanVaNguoiDat,
+      LK.maCaKham,
+      -- Thông tin ca khám
+      CK.ngayKham,
+      CK.gioBatDau,
+      CK.gioKetThuc,
+      CK.moTa,
+      CK.maNhaSi,
+      -- Thông tin bệnh nhân
+      ND.hoTen AS tenBenhNhan,
+      ND.soDienThoai,
+      ND.eMail,
+      ND.gioiTinh,
+      ND.ngaySinh,
+      ND.diaChi,
+      ND.anh,
+      -- Thông tin bác sĩ
+      NS.hoTen AS tenNhaSi
+    FROM LICHKHAM LK
+    INNER JOIN CAKHAM CK ON LK.maCaKham = CK.maCaKham
+    INNER JOIN NGUOIDUNG ND ON LK.maBenhNhan = ND.maNguoiDung
+    INNER JOIN NHASI NS ON CK.maNhaSi = NS.maNhaSi
+    WHERE CK.maNhaSi = ?
+  `;
+
+  const params = [maNhaSi];
+
+  // Thêm filter theo ngày nếu có
+  if (startDate && endDate) {
+    sql += ` AND CK.ngayKham BETWEEN ? AND ?`;
+    params.push(startDate, endDate);
+  } else if (startDate) {
+    sql += ` AND CK.ngayKham >= ?`;
+    params.push(startDate);
+  } else if (endDate) {
+    sql += ` AND CK.ngayKham <= ?`;
+    params.push(endDate);
+  }
+
+  sql += ` ORDER BY CK.ngayKham DESC, CK.gioBatDau ASC`;
+
+  db.query(sql, params, (err, rows) => {
+    if (err) {
+      console.error('Error getting appointments by doctor:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+};
+
+// Lấy danh sách bệnh nhân đã khám của bác sĩ
+exports.getPatientsByDoctor = (req, res) => {
+  const { maNhaSi } = req.params;
+
+  const sql = `
+    SELECT 
+      ND.maNguoiDung,
+      ND.hoTen,
+      ND.ngaySinh,
+      ND.gioiTinh,
+      ND.eMail,
+      ND.soDienThoai,
+      ND.diaChi,
+      ND.anh,
+      COUNT(LK.maLichKham) as soLanKham,
+      MAX(CK.ngayKham) as lanKhamGanNhat
+    FROM NGUOIDUNG ND
+    INNER JOIN LICHKHAM LK ON ND.maNguoiDung = LK.maBenhNhan
+    INNER JOIN CAKHAM CK ON LK.maCaKham = CK.maCaKham
+    WHERE CK.maNhaSi = ?
+    GROUP BY ND.maNguoiDung, ND.hoTen, ND.ngaySinh, ND.gioiTinh, ND.eMail, ND.soDienThoai, ND.diaChi, ND.anh
+    ORDER BY lanKhamGanNhat DESC
+  `;
+
+  db.query(sql, [maNhaSi], (err, rows) => {
+    if (err) {
+      console.error('Error getting patients by doctor:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
   });
 };

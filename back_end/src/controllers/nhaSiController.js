@@ -91,3 +91,46 @@ exports.delete = (req, res) => {
     res.json({ message: 'Xóa nha sĩ thành công' });
   });
 };
+
+// Lấy danh sách nha sĩ theo phòng khám (với thông tin user)
+exports.getByClinic = (req, res) => {
+  const { clinicId } = req.params;
+  const sql = `
+    SELECT 
+      NS.*,
+      ND.ngaySinh,
+      ND.gioiTinh,
+      ND.eMail,
+      ND.soDienThoai,
+      ND.diaChi,
+      ND.anh
+    FROM NHASI NS
+    JOIN TAIKHOAN TK ON NS.maNhaSi = TK.tenTaiKhoan
+    JOIN NGUOIDUNG ND ON TK.maNguoiDung = ND.maNguoiDung
+    WHERE NS.maPhongKham = ?
+  `;
+
+  db.query(sql, [clinicId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    // Format the results to include userData
+    const formattedResults = results.map(doctor => ({
+      maNhaSi: doctor.maNhaSi,
+      maPhongKham: doctor.maPhongKham,
+      hoTen: doctor.hoTen,
+      kinhNghiem: doctor.kinhNghiem,
+      chucVu: doctor.chucVu,
+      ghiChu: doctor.ghiChu,
+      userData: {
+        ngaySinh: doctor.ngaySinh,
+        gioiTinh: doctor.gioiTinh,
+        eMail: doctor.eMail,
+        soDienThoai: doctor.soDienThoai,
+        diaChi: doctor.diaChi,
+        anh: doctor.anh
+      }
+    }));
+
+    res.json(formattedResults);
+  });
+};

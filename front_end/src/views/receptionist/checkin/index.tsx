@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { appointmentService, userService, userServiceExtended, shiftService } from '../../../services';
+import { appointmentService, userService, userServiceExtended } from '../../../services';
 
 interface Appointment {
     maLichKham: number;
@@ -31,34 +31,29 @@ function ReceptionistCheckin() {
         try {
             setLoading(true);
 
-            const [appointmentRes, patientRes, shiftRes] = await Promise.all([
+            const [appointmentRes, patientRes] = await Promise.all([
                 appointmentService.all(),
-                userServiceExtended.getFullList({ maQuyen: 4 }),
-                shiftService.all()
+                userServiceExtended.getFullList({ maQuyen: 4 })
             ]);
 
             const appointments = appointmentRes.data;
             const patients = patientRes.data;
-            const shifts = shiftRes.data;
 
-            // Filter appointments for today and relevant statuses
+            // Filter for today's appointments
             const todayAppointments = appointments.filter((apt: any) => {
                 const aptDate = new Date(apt.ngayDatLich).toISOString().split('T')[0];
-                return aptDate === selectedDate && ['Chờ', 'Đã đặt', 'Đã đến', 'Đang khám'].includes(apt.trangThai);
+                return aptDate === selectedDate;
             });
 
-            // Enrich with patient and shift information
+            // Enrich with patient information - tenNhaSi đã có từ API
             const enrichedAppointments = todayAppointments.map((apt: any) => {
                 const patient = patients.find((p: any) => p.maNguoiDung === apt.maBenhNhan);
-                const shift = shifts.find((s: any) => s.maCaKham === apt.maCaKham);
 
                 return {
                     ...apt,
                     tenBenhNhan: patient?.hoTen,
                     soDienThoai: patient?.soDienThoai,
-                    gioBatDau: shift?.gioBatDau,
-                    gioKetThuc: shift?.gioKetThuc,
-                    tenNhaSi: shift?.tenNhaSi
+                    // tenNhaSi, gioBatDau, gioKetThuc đã có từ API response
                 };
             });
 

@@ -145,7 +145,7 @@ function ReceptionistMedicalRecords() {
 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">Quản lý phiếu khám bệnh</h4>
+                <h4 className="mb-0">Cập nhật phiếu khám bệnh</h4>
                 <div className="d-flex align-items-center gap-3">
                     <input
                         type="date"

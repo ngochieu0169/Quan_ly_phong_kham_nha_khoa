@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { invoiceService, medicalRecordService, serviceService, appointmentService } from '../../../services';
+import QRCode from 'qrcode';
+import { invoiceService, medicalRecordService, serviceService, appointmentService, invoiceServiceExtended } from '../../../services';
 
 interface Invoice {
     maHoaDon: number;
@@ -14,6 +15,9 @@ interface Invoice {
     tenBenhNhan?: string;
     soDienThoai?: string;
     maLichKham?: number;
+    ketQuaChuanDoan?: string;
+    trieuChung?: string;
+    ngayKham?: string;
 }
 
 interface MedicalRecord {
@@ -42,18 +46,36 @@ interface Service {
     moTa: string;
 }
 
+interface InvoiceDetail {
+    maDichVu: number;
+    tenDichVu: string;
+    soLuong: number;
+    donGia: number;
+    thanhTien: number;
+}
+
 function ReceptionistBilling() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(''); // Mặc định hiển thị tất cả
     const [filterStatus, setFilterStatus] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [pageSize, setPageSize] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const [showServiceModal, setShowServiceModal] = useState(false);
-    const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
-    const [serviceUsages, setServiceUsages] = useState<ServiceUsage[]>([]);
+
+
+    // Payment modal states
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+    const [showQRCode, setShowQRCode] = useState(false);
+    const [qrCodeDataURL, setQRCodeDataURL] = useState('');
+
+    // Detail modal states
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetail[]>([]);
 
     useEffect(() => {
         fetchData();
@@ -63,52 +85,77 @@ function ReceptionistBilling() {
         try {
             setLoading(true);
 
-            const [invoiceRes, recordRes, serviceRes, appointmentRes] = await Promise.all([
+            const [invoiceRes, recordRes, serviceRes] = await Promise.all([
                 invoiceService.all(),
                 medicalRecordService.all(),
-                serviceService.all(),
-                appointmentService.all()
+                serviceService.all()
             ]);
 
             const invoices = invoiceRes.data;
-            const records = recordRes.data;
-            const appointments = appointmentRes.data;
+            const records = recordRes.data; // Đã có thông tin bệnh nhân
+
+            console.log('=== BILLING DEBUG ===');
+            console.log('Selected date:', selectedDate);
+            console.log('All invoices:', invoices);
+            console.log('All records:', records.length);
+            console.log('Records sample:', records[0]);
 
             // Filter by date
-            const filteredInvoices = invoices.filter((inv: any) => {
-                const invDate = new Date(inv.ngaytao).toISOString().split('T')[0];
-                return invDate === selectedDate;
-            });
+            let filteredInvoices = invoices;
+            if (selectedDate && selectedDate !== '') {
+                filteredInvoices = invoices.filter((inv: any) => {
+                    const invDate = new Date(inv.ngaytao).toISOString().split('T')[0];
+                    return invDate === selectedDate;
+                });
+                console.log(`Filtered by date ${selectedDate}:`, filteredInvoices.length);
+            } else {
+                console.log('Showing all invoices (no date filter)');
+            }
 
-            // Enrich invoices with patient info
+            console.log('Filtered invoices:', filteredInvoices);
+
+            // Enrich invoices with patient info and medical record details
             const enrichedInvoices = filteredInvoices.map((inv: any) => {
                 const record = records.find((r: any) => r.maPhieuKham === inv.maPhieuKham);
-                const appointment = appointments.find((a: any) => a.maLichKham === record?.maLichKham);
+
+                console.log(`Processing invoice ${inv.maHoaDon}:`, {
+                    record: record?.maPhieuKham,
+                    tenBenhNhan: record?.benhNhanHoTen,
+                    recordData: record
+                });
 
                 return {
                     ...inv,
-                    tenBenhNhan: appointment?.tenBenhNhan,
-                    soDienThoai: appointment?.soDienThoai,
-                    maLichKham: record?.maLichKham
+                    tenBenhNhan: record?.benhNhanHoTen,
+                    soDienThoai: record?.soDienThoai,
+                    maLichKham: record?.maLichKham,
+                    ketQuaChuanDoan: record?.ketQuaChuanDoan,
+                    trieuChung: record?.trieuChung,
+                    ngayKham: record?.ngayKham
                 };
             });
 
-            // Enrich medical records
+            // Enrich medical records - sử dụng dữ liệu có sẵn
             const enrichedRecords = records.map((record: any) => {
-                const appointment = appointments.find((a: any) => a.maLichKham === record.maLichKham);
                 return {
                     ...record,
-                    tenBenhNhan: appointment?.tenBenhNhan,
-                    ngayKham: appointment?.ngayDatLich,
-                    trieuChung: appointment?.trieuChung
+                    tenBenhNhan: record?.benhNhanHoTen,
+                    ngayKham: record?.ngayKham,
+                    trieuChung: record?.trieuChung
                 };
             });
+
+            console.log('Final enriched invoices:', enrichedInvoices);
 
             setInvoices(enrichedInvoices);
             setMedicalRecords(enrichedRecords);
-            setServices(serviceRes.data);
+            // Kiểm tra cấu trúc dữ liệu services
+            const servicesData = serviceRes.data?.data || serviceRes.data;
+            console.log('Services data:', servicesData);
+            setServices(servicesData);
         } catch (error) {
             toast.error('Không thể tải dữ liệu');
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
@@ -116,88 +163,103 @@ function ReceptionistBilling() {
 
     const handlePayment = async (invoiceId: number, paymentMethod: string) => {
         try {
+            const currentDate = new Date().toISOString();
             await invoiceService.update(invoiceId, {
                 trangThai: 'Đã thu tiền',
                 phuongThuc: paymentMethod,
-                ngayThanhToan: new Date().toISOString().split('T')[0]
+                ngayThanhToan: currentDate
             });
-            toast.success('Thanh toán thành công');
+            toast.success(`Thanh toán ${paymentMethod.toLowerCase()} thành công`);
+            setShowPaymentModal(false);
+            setShowQRCode(false);
+            setSelectedInvoice(null);
             fetchData();
         } catch (error) {
-            toast.error('Thanh toán thất bại');
+            toast.error('Thanh toán thất bại. Vui lòng thử lại');
+            console.error('Payment error:', error);
         }
     };
 
-    const handleUpdateServices = (record: MedicalRecord) => {
-        setSelectedRecord(record);
-        setServiceUsages(record.services || []);
-        setShowServiceModal(true);
+    const handleOpenPaymentModal = (invoice: Invoice) => {
+        setSelectedInvoice(invoice);
+        setShowQRCode(false);
+        setShowPaymentModal(true);
     };
 
-    const addServiceUsage = () => {
-        setServiceUsages([...serviceUsages, {
-            maDichVu: 0,
-            tenDichVu: '',
-            soLuong: 1,
-            donGia: 0,
-            thanhTien: 0
-        }]);
-    };
-
-    const removeServiceUsage = (index: number) => {
-        setServiceUsages(serviceUsages.filter((_, i) => i !== index));
-    };
-
-    const updateServiceUsage = (index: number, field: keyof ServiceUsage, value: any) => {
-        const updated = [...serviceUsages];
-        updated[index] = { ...updated[index], [field]: value };
-
-        // Auto calculate total when service or quantity changes
-        if (field === 'maDichVu') {
-            const service = services.find(s => s.maDichVu === value);
-            if (service) {
-                updated[index].tenDichVu = service.tenDichVu;
-                updated[index].donGia = service.donGia;
-                updated[index].thanhTien = service.donGia * updated[index].soLuong;
-            }
-        } else if (field === 'soLuong') {
-            updated[index].thanhTien = updated[index].donGia * value;
+    const handleDirectPayment = (method: string) => {
+        if (selectedInvoice) {
+            handlePayment(selectedInvoice.maHoaDon, method);
         }
-
-        setServiceUsages(updated);
     };
 
-    const handleSaveServices = async () => {
-        if (!selectedRecord) return;
-
-        const totalAmount = serviceUsages.reduce((sum, usage) => sum + usage.thanhTien, 0);
-
+    const handleOnlinePayment = async () => {
         try {
-            // Create or update invoice
-            const invoiceData = {
-                soTien: totalAmount,
-                phuongThuc: 'Tiền mặt',
-                trangThai: 'Chưa thu tiền',
-                ngaytao: new Date().toISOString().split('T')[0],
-                maPhieuKham: selectedRecord.maPhieuKham
-            };
-
-            // Check if invoice exists
-            const existingInvoice = invoices.find(inv => inv.maPhieuKham === selectedRecord.maPhieuKham);
-
-            if (existingInvoice) {
-                await invoiceService.update(existingInvoice.maHoaDon, invoiceData);
-            } else {
-                await invoiceService.create(invoiceData);
-            }
-
-            toast.success('Cập nhật dịch vụ thành công');
-            setShowServiceModal(false);
-            setSelectedRecord(null);
-            fetchData();
+            const qrData = generateQRData();
+            const qrCodeURL = await QRCode.toDataURL(qrData, {
+                errorCorrectionLevel: 'M',
+                width: 250,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            });
+            setQRCodeDataURL(qrCodeURL);
+            setShowQRCode(true);
         } catch (error) {
-            toast.error('Cập nhật thất bại');
+            toast.error('Không thể tạo mã QR');
+            console.error('QR Code generation error:', error);
         }
+    };
+
+    const generateQRData = () => {
+        if (!selectedInvoice) return '';
+
+        // Thông tin ngân hàng (có thể config từ env hoặc settings)
+        const bankInfo = {
+            bankId: 'MB', // Ngân hàng MB Bank
+            accountNumber: '0123456789', // Số tài khoản
+            accountName: 'PHONG KHAM NHA KHOA ABC',
+            amount: selectedInvoice.soTien,
+            description: `Thanh toan HD${selectedInvoice.maHoaDon.toString().padStart(6, '0')}`
+        };
+
+        // Tạo chuỗi QR theo chuẩn VietQR
+        return `${bankInfo.bankId}|${bankInfo.accountNumber}|${bankInfo.accountName}|${bankInfo.amount}|${bankInfo.description}`;
+    };
+
+    const confirmOnlinePayment = () => {
+        if (selectedInvoice) {
+            handlePayment(selectedInvoice.maHoaDon, 'Chuyển khoản');
+        }
+    };
+
+    const handleViewInvoiceDetail = async (invoice: Invoice) => {
+        try {
+            // Lấy chi tiết hóa đơn thật từ API
+            const detailRes = await invoiceServiceExtended.getDetailWithServices(invoice.maHoaDon);
+            const invoiceDetail = detailRes.data;
+
+            setInvoiceDetails(invoiceDetail.chiTiet || []);
+            setSelectedInvoice({
+                ...invoice,
+                tenBenhNhan: invoiceDetail.tenBenhNhan,
+                soDienThoai: invoiceDetail.soDienThoai,
+                ngayKham: invoiceDetail.ngayKham,
+                trieuChung: invoiceDetail.trieuChung
+            });
+            setShowDetailModal(true);
+        } catch (error) {
+            toast.error('Không thể tải chi tiết hóa đơn');
+            console.error('Error loading invoice details:', error);
+        }
+    };
+
+
+
+    const exportReport = () => {
+        // Implement export functionality
+        toast.info('Chức năng xuất báo cáo đang được phát triển');
     };
 
     const formatCurrency = (amount: number) => {
@@ -212,26 +274,30 @@ function ReceptionistBilling() {
         return new Date(dateString).toLocaleDateString('vi-VN');
     };
 
+    const formatDateTime = (dateString: string | null) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleString('vi-VN');
+    };
+
     const getStatusBadge = (status: string) => {
-        const statusMap: { [key: string]: string } = {
-            'Đã thu tiền': 'success',
-            'Chưa thu tiền': 'warning',
-            'Hủy': 'danger'
-        };
-        return `badge bg-${statusMap[status] || 'secondary'}`;
+        switch (status) {
+            case 'Đã thu tiền': return 'badge bg-success';
+            case 'Chưa thu tiền': return 'badge bg-warning text-dark';
+            case 'Hủy': return 'badge bg-danger';
+            default: return 'badge bg-secondary';
+        }
     };
 
     const getPaymentMethodIcon = (method: string) => {
-        const iconMap: { [key: string]: string } = {
-            'Tiền mặt': 'icofont-money',
-            'Chuyển khoản': 'icofont-bank-transfer',
-            'VNPay': 'icofont-credit-card',
-            'Thẻ': 'icofont-credit-card'
-        };
-        return iconMap[method] || 'icofont-money';
+        switch (method) {
+            case 'Tiền mặt': return 'icofont-money text-success';
+            case 'Thẻ': return 'icofont-credit-card text-primary';
+            case 'Chuyển khoản': return 'icofont-bank text-info';
+            default: return 'icofont-question-circle text-muted';
+        }
     };
 
-    // Filter data
+    // Filter and pagination
     const filteredInvoices = invoices.filter(invoice => {
         const matchStatus = !filterStatus || invoice.trangThai === filterStatus;
         const matchSearch = !searchTerm ||
@@ -242,9 +308,12 @@ function ReceptionistBilling() {
         return matchStatus && matchSearch;
     });
 
-    const recordsWithoutInvoice = medicalRecords.filter(record =>
-        !invoices.some(inv => inv.maPhieuKham === record.maPhieuKham)
-    );
+    const totalPages = Math.ceil(filteredInvoices.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + pageSize);
+
+    // Ẩn phần tạo hóa đơn vì bác sĩ đã tạo trực tiếp
+    const recordsWithoutInvoice: MedicalRecord[] = [];
 
     // Statistics
     const stats = {
@@ -263,14 +332,25 @@ function ReceptionistBilling() {
 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">Quản lý thanh toán</h4>
+                <h4 className="mb-0">Quản lý thanh toán hóa đơn</h4>
                 <div className="d-flex align-items-center gap-3">
+                    <select
+                        className="form-select"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        style={{ width: '200px' }}
+                    >
+                        <option value="">Tất cả ngày</option>
+                        <option value={new Date().toISOString().split('T')[0]}>Hôm nay</option>
+                        <option value={new Date(Date.now() - 86400000).toISOString().split('T')[0]}>Hôm qua</option>
+                    </select>
                     <input
                         type="date"
                         className="form-control"
-                        value={selectedDate}
+                        value={selectedDate === '' ? '' : selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                         style={{ width: '180px' }}
+                        placeholder="Chọn ngày cụ thể"
                     />
                     <button className="btn btn-primary" onClick={fetchData}>
                         <i className="icofont-refresh me-2"></i>Làm mới
@@ -349,9 +429,9 @@ function ReceptionistBilling() {
                         </div>
                         <div className="col-md-5 text-end">
                             <span className="text-muted me-3">
-                                Ngày: {new Date(selectedDate).toLocaleDateString('vi-VN')}
+                                Ngày: {selectedDate && selectedDate !== '' ? new Date(selectedDate).toLocaleDateString('vi-VN') : 'Tất cả'}
                             </span>
-                            <button className="btn btn-outline-success">
+                            <button className="btn btn-outline-success" onClick={exportReport}>
                                 <i className="icofont-download"></i> Xuất báo cáo
                             </button>
                         </div>
@@ -359,40 +439,12 @@ function ReceptionistBilling() {
                 </div>
             </div>
 
-            {/* Medical Records without Invoice */}
-            {recordsWithoutInvoice.length > 0 && (
-                <div className="card mb-4">
-                    <div className="card-header bg-warning text-dark">
-                        <h6 className="mb-0">
-                            <i className="icofont-prescription me-2"></i>
-                            Phiếu khám chưa tạo hóa đơn ({recordsWithoutInvoice.length})
-                        </h6>
-                    </div>
-                    <div className="card-body">
-                        <div className="row">
-                            {recordsWithoutInvoice.slice(0, 6).map(record => (
-                                <div key={record.maPhieuKham} className="col-md-4 mb-3">
-                                    <div className="card border-warning">
-                                        <div className="card-body">
-                                            <h6 className="card-title">PK{record.maPhieuKham.toString().padStart(6, '0')}</h6>
-                                            <p className="card-text">
-                                                <strong>{record.tenBenhNhan}</strong><br />
-                                                <small className="text-muted">{formatDate(record.ngayKham)}</small>
-                                            </p>
-                                            <button
-                                                className="btn btn-sm btn-warning"
-                                                onClick={() => handleUpdateServices(record)}
-                                            >
-                                                <i className="icofont-plus me-1"></i>Tạo hóa đơn
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Thông báo về việc tạo hóa đơn */}
+            <div className="alert alert-info mb-4">
+                <i className="icofont-info-circle me-2"></i>
+                <strong>Lưu ý:</strong> Hóa đơn được tạo trực tiếp bởi bác sĩ sau khi khám bệnh.
+                Lễ tân chỉ thực hiện thu tiền và quản lý thanh toán.
+            </div>
 
             {/* Invoices List */}
             <div className="card">
@@ -426,9 +478,9 @@ function ReceptionistBilling() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredInvoices.map((invoice, index) => (
+                                    {paginatedInvoices.map((invoice, index) => (
                                         <tr key={invoice.maHoaDon}>
-                                            <td>{index + 1}</td>
+                                            <td>{startIndex + index + 1}</td>
                                             <td>
                                                 <span className="fw-bold">HD{invoice.maHoaDon.toString().padStart(6, '0')}</span>
                                             </td>
@@ -442,10 +494,20 @@ function ReceptionistBilling() {
                                             <td className="text-primary fw-bold">{formatCurrency(invoice.soTien)}</td>
                                             <td>
                                                 <i className={`${getPaymentMethodIcon(invoice.phuongThuc)} me-1`}></i>
-                                                {invoice.phuongThuc}
+                                                <span className="text-muted">{invoice.phuongThuc}</span>
                                             </td>
-                                            <td>{formatDate(invoice.ngaytao)}</td>
-                                            <td>{formatDate(invoice.ngayThanhToan)}</td>
+                                            <td>
+                                                <small>{formatDate(invoice.ngaytao)}</small>
+                                            </td>
+                                            <td>
+                                                {invoice.ngayThanhToan ? (
+                                                    <small className="text-success fw-bold">
+                                                        {formatDate(invoice.ngayThanhToan)}
+                                                    </small>
+                                                ) : (
+                                                    <small className="text-muted">-</small>
+                                                )}
+                                            </td>
                                             <td>
                                                 <span className={getStatusBadge(invoice.trangThai)}>
                                                     {invoice.trangThai}
@@ -454,45 +516,17 @@ function ReceptionistBilling() {
                                             <td>
                                                 <div className="d-flex gap-1">
                                                     {invoice.trangThai === 'Chưa thu tiền' && (
-                                                        <div className="dropdown">
-                                                            <button
-                                                                className="btn btn-sm btn-success dropdown-toggle"
-                                                                type="button"
-                                                                data-bs-toggle="dropdown"
-                                                            >
-                                                                <i className="icofont-money me-1"></i>Thu tiền
-                                                            </button>
-                                                            <ul className="dropdown-menu">
-                                                                <li>
-                                                                    <button
-                                                                        className="dropdown-item"
-                                                                        onClick={() => handlePayment(invoice.maHoaDon, 'Tiền mặt')}
-                                                                    >
-                                                                        <i className="icofont-money me-2"></i>Tiền mặt
-                                                                    </button>
-                                                                </li>
-                                                                <li>
-                                                                    <button
-                                                                        className="dropdown-item"
-                                                                        onClick={() => handlePayment(invoice.maHoaDon, 'Chuyển khoản')}
-                                                                    >
-                                                                        <i className="icofont-bank-transfer me-2"></i>Chuyển khoản
-                                                                    </button>
-                                                                </li>
-                                                                <li>
-                                                                    <button
-                                                                        className="dropdown-item"
-                                                                        onClick={() => handlePayment(invoice.maHoaDon, 'Thẻ')}
-                                                                    >
-                                                                        <i className="icofont-credit-card me-2"></i>Thẻ
-                                                                    </button>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
+                                                        <button
+                                                            className="btn btn-sm btn-success"
+                                                            onClick={() => handleOpenPaymentModal(invoice)}
+                                                        >
+                                                            <i className="icofont-money me-1"></i>Thu tiền
+                                                        </button>
                                                     )}
                                                     <button
                                                         className="btn btn-sm btn-outline-primary"
                                                         title="Xem chi tiết"
+                                                        onClick={() => handleViewInvoiceDetail(invoice)}
                                                     >
                                                         <i className="icofont-eye"></i>
                                                     </button>
@@ -503,10 +537,54 @@ function ReceptionistBilling() {
                                 </tbody>
                             </table>
 
-                            {filteredInvoices.length === 0 && (
+                            {paginatedInvoices.length === 0 && (
                                 <div className="text-center py-4 text-muted">
                                     <i className="icofont-bill fs-3"></i>
                                     <p className="mt-2">Không có hóa đơn nào</p>
+                                </div>
+                            )}
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="d-flex justify-content-between align-items-center mt-3">
+                                    <div>
+                                        <span className="text-muted">
+                                            Hiển thị {startIndex + 1}-{Math.min(startIndex + pageSize, filteredInvoices.length)}
+                                            của {filteredInvoices.length} hóa đơn
+                                        </span>
+                                    </div>
+                                    <nav>
+                                        <ul className="pagination pagination-sm mb-0">
+                                            <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                                <button
+                                                    className="page-link"
+                                                    onClick={() => setCurrentPage(currentPage - 1)}
+                                                    disabled={currentPage === 1}
+                                                >
+                                                    Trước
+                                                </button>
+                                            </li>
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => setCurrentPage(page)}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                </li>
+                                            ))}
+                                            <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                                <button
+                                                    className="page-link"
+                                                    onClick={() => setCurrentPage(currentPage + 1)}
+                                                    disabled={currentPage === totalPages}
+                                                >
+                                                    Sau
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </nav>
                                 </div>
                             )}
                         </div>
@@ -514,103 +592,225 @@ function ReceptionistBilling() {
                 </div>
             </div>
 
-            {/* Service Modal */}
-            {showServiceModal && selectedRecord && (
+
+
+            {/* Payment Modal */}
+            {showPaymentModal && selectedInvoice && (
                 <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-xl">
+                    <div className="modal-dialog modal-lg">
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    Cập nhật dịch vụ - PK{selectedRecord.maPhieuKham.toString().padStart(6, '0')}
+                                    Thanh toán - HD{selectedInvoice.maHoaDon.toString().padStart(6, '0')}
                                 </h5>
-                                <button type="button" className="btn-close" onClick={() => setShowServiceModal(false)} />
+                                <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)} />
                             </div>
                             <div className="modal-body">
-                                <div className="mb-3">
-                                    <strong>Bệnh nhân:</strong> {selectedRecord.tenBenhNhan} <br />
-                                    <strong>Triệu chứng:</strong> {selectedRecord.trieuChung}
+                                <div className="mb-4 p-3 bg-light rounded">
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div><strong>Bệnh nhân:</strong> {selectedInvoice.tenBenhNhan}</div>
+                                            <div><strong>SĐT:</strong> {selectedInvoice.soDienThoai}</div>
+                                            <div><strong>Phiếu khám:</strong> PK{selectedInvoice.maPhieuKham.toString().padStart(6, '0')}</div>
+                                        </div>
+                                        <div className="col-md-6 text-end">
+                                            <div><strong>Ngày tạo:</strong> {formatDate(selectedInvoice.ngaytao)}</div>
+                                            <div><strong>Trạng thái:</strong> <span className={getStatusBadge(selectedInvoice.trangThai)}>{selectedInvoice.trangThai}</span></div>
+                                            <div className="mt-2">
+                                                <strong>Tổng tiền:</strong>
+                                                <div className="fs-5 text-primary fw-bold">
+                                                    {formatCurrency(selectedInvoice.soTien)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <h6>Dịch vụ sử dụng</h6>
-                                    <button className="btn btn-outline-primary btn-sm" onClick={addServiceUsage}>
-                                        <i className="icofont-plus me-1"></i>Thêm dịch vụ
-                                    </button>
+                                {!showQRCode ? (
+                                    <div>
+                                        <h6 className="mb-3">Chọn phương thức thanh toán:</h6>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <div className="card border-2">
+                                                    <div className="card-body text-center">
+                                                        <i className="icofont-money fs-2 text-success mb-3"></i>
+                                                        <h6>Thu tiền trực tiếp</h6>
+                                                        <p className="text-muted small">Thu tiền mặt tại quầy</p>
+                                                        <div className="d-grid gap-2">
+                                                            <button
+                                                                className="btn btn-success"
+                                                                onClick={() => handleDirectPayment('Tiền mặt')}
+                                                            >
+                                                                <i className="icofont-money me-2"></i>Tiền mặt
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-outline-success"
+                                                                onClick={() => handleDirectPayment('Thẻ')}
+                                                            >
+                                                                <i className="icofont-credit-card me-2"></i>Thẻ
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <div className="card border-2">
+                                                    <div className="card-body text-center">
+                                                        <i className="icofont-qr-code fs-2 text-primary mb-3"></i>
+                                                        <h6>Thanh toán online</h6>
+                                                        <p className="text-muted small">Quét mã QR để thanh toán</p>
+                                                        <button
+                                                            className="btn btn-primary w-100"
+                                                            onClick={handleOnlinePayment}
+                                                        >
+                                                            <i className="icofont-qr-code me-2"></i>Tạo mã QR
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center">
+                                        <h6 className="mb-3">Quét mã QR để thanh toán</h6>
+                                        <div className="d-flex justify-content-center mb-4">
+                                            <div className="p-4 bg-white border rounded shadow-sm">
+                                                {qrCodeDataURL && (
+                                                    <img
+                                                        src={qrCodeDataURL}
+                                                        alt="QR Code thanh toán"
+                                                        className="img-fluid"
+                                                        style={{ width: '250px', height: '250px' }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="alert alert-info">
+                                            <div className="row text-start">
+                                                <div className="col-sm-6">
+                                                    <strong>Ngân hàng:</strong> MB Bank<br />
+                                                    <strong>Số TK:</strong> 0123456789
+                                                </div>
+                                                <div className="col-sm-6">
+                                                    <strong>Chủ TK:</strong> PHONG KHAM NHA KHOA ABC<br />
+                                                    <strong>Số tiền:</strong> {formatCurrency(selectedInvoice.soTien)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="alert alert-warning">
+                                            <i className="icofont-warning me-2"></i>
+                                            Sau khi chuyển khoản thành công, vui lòng nhấn "Xác nhận thanh toán" để hoàn tất.
+                                        </div>
+
+                                        <div className="d-flex gap-2 justify-content-center">
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={() => setShowQRCode(false)}
+                                            >
+                                                <i className="icofont-arrow-left me-2"></i>Quay lại
+                                            </button>
+                                            <button
+                                                className="btn btn-success"
+                                                onClick={confirmOnlinePayment}
+                                            >
+                                                <i className="icofont-check me-2"></i>Xác nhận thanh toán
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Detail Modal */}
+            {showDetailModal && selectedInvoice && (
+                <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-lg">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">
+                                    Chi tiết hóa đơn - HD{selectedInvoice.maHoaDon.toString().padStart(6, '0')}
+                                </h5>
+                                <button type="button" className="btn-close" onClick={() => setShowDetailModal(false)} />
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-4 p-3 bg-light rounded">
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div><strong>Bệnh nhân:</strong> {selectedInvoice.tenBenhNhan}</div>
+                                            <div><strong>SĐT:</strong> {selectedInvoice.soDienThoai}</div>
+                                            <div><strong>Ngày khám:</strong> {formatDate(selectedInvoice.ngayKham || null)}</div>
+                                            {selectedInvoice.trieuChung && (
+                                                <div><strong>Triệu chứng:</strong> {selectedInvoice.trieuChung}</div>
+                                            )}
+                                        </div>
+                                        <div className="col-md-6 text-end">
+                                            <div><strong>Mã HĐ:</strong> HD{selectedInvoice.maHoaDon.toString().padStart(6, '0')}</div>
+                                            <div><strong>Phiếu khám:</strong> PK{selectedInvoice.maPhieuKham.toString().padStart(6, '0')}</div>
+                                            <div><strong>Ngày tạo:</strong> {formatDate(selectedInvoice.ngaytao)}</div>
+                                            <div><strong>Trạng thái:</strong> <span className={getStatusBadge(selectedInvoice.trangThai)}>{selectedInvoice.trangThai}</span></div>
+                                            <div className="mt-2">
+                                                <strong>Tổng tiền:</strong>
+                                                <div className="fs-5 text-primary fw-bold">
+                                                    {formatCurrency(selectedInvoice.soTien)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
+                                <h6 className="mb-3">Chi tiết dịch vụ</h6>
                                 <div className="table-responsive">
                                     <table className="table table-bordered">
                                         <thead>
                                             <tr>
                                                 <th>Dịch vụ</th>
-                                                <th width="100">Số lượng</th>
-                                                <th width="150">Đơn giá</th>
-                                                <th width="150">Thành tiền</th>
-                                                <th width="50">Xóa</th>
+                                                <th style={{ width: '100px' }}>Số lượng</th>
+                                                <th style={{ width: '150px' }}>Đơn giá</th>
+                                                <th style={{ width: '150px' }}>Thành tiền</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {serviceUsages.map((usage, index) => (
+                                            {invoiceDetails.map((detail, index) => (
                                                 <tr key={index}>
-                                                    <td>
-                                                        <select
-                                                            className="form-select"
-                                                            value={usage.maDichVu}
-                                                            onChange={(e) => updateServiceUsage(index, 'maDichVu', parseInt(e.target.value))}
-                                                        >
-                                                            <option value={0}>Chọn dịch vụ</option>
-                                                            {services.map(service => (
-                                                                <option key={service.maDichVu} value={service.maDichVu}>
-                                                                    {service.tenDichVu}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </td>
-                                                    <td>
-                                                        <input
-                                                            type="number"
-                                                            className="form-control"
-                                                            min="1"
-                                                            value={usage.soLuong}
-                                                            onChange={(e) => updateServiceUsage(index, 'soLuong', parseInt(e.target.value))}
-                                                        />
-                                                    </td>
-                                                    <td className="text-end">
-                                                        {formatCurrency(usage.donGia)}
-                                                    </td>
-                                                    <td className="text-end fw-bold">
-                                                        {formatCurrency(usage.thanhTien)}
-                                                    </td>
-                                                    <td>
-                                                        <button
-                                                            className="btn btn-sm btn-outline-danger"
-                                                            onClick={() => removeServiceUsage(index)}
-                                                        >
-                                                            <i className="icofont-trash"></i>
-                                                        </button>
-                                                    </td>
+                                                    <td>{detail.tenDichVu}</td>
+                                                    <td>{detail.soLuong}</td>
+                                                    <td>{formatCurrency(detail.donGia)}</td>
+                                                    <td>{formatCurrency(detail.thanhTien)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                         <tfoot>
-                                            <tr>
+                                            <tr className="table-success">
                                                 <th colSpan={3} className="text-end">Tổng cộng:</th>
                                                 <th className="text-end text-primary">
-                                                    {formatCurrency(serviceUsages.reduce((sum, usage) => sum + usage.thanhTien, 0))}
+                                                    {formatCurrency(invoiceDetails.reduce((sum, detail) => sum + detail.thanhTien, 0))}
                                                 </th>
-                                                <th></th>
                                             </tr>
                                         </tfoot>
                                     </table>
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowServiceModal(false)}>
-                                    Hủy
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowDetailModal(false)}>
+                                    Đóng
                                 </button>
-                                <button type="button" className="btn btn-primary" onClick={handleSaveServices}>
-                                    Lưu & Tạo hóa đơn
-                                </button>
+                                {selectedInvoice.trangThai === 'Chưa thu tiền' && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-success"
+                                        onClick={() => {
+                                            setShowDetailModal(false);
+                                            handleOpenPaymentModal(selectedInvoice);
+                                        }}
+                                    >
+                                        <i className="icofont-money me-2"></i>Thu tiền
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

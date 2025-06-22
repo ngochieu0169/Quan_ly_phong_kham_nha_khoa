@@ -3,6 +3,10 @@
 import AccountManager from "../views/admin/accountManagerPage";
 import ClinicManagerPage from "../views/admin/clinicManagerPage";
 import ScheduleManagerPage from "../views/admin/scheduleManagerPage";
+import ShiftManagerPage from "../views/admin/shiftManagerPage";
+import BillManagerPage from "../views/admin/billManagerPage";
+import ServiceManagerPage from "../views/admin/serviceManagerPage";
+import AdminDashboard from "../views/admin";
 import DoctorProfile from "../views/auth/doctorProfile";
 import DoctorShiftCalendar from "../views/auth/doctorShiftCalendar";
 import LoginPage from "../views/auth/login";
@@ -31,6 +35,14 @@ import ReceptionistMedicalRecords from "../views/receptionist/medical-records";
 import ReceptionistNotifications from "../views/receptionist/notifications";
 import DoctorScheduleManager from "../views/receptionist/doctorSchedule";
 import PendingAssignments from "../views/receptionist/assignments";
+
+// Owner imports
+import OwnerDashboard from "../views/owner";
+import ClinicInfo from "../views/owner/clinicInfo";
+import StaffManagement from "../views/owner/staff";
+import RevenueManagement from "../views/owner/revenue";
+import AppointmentManagement from "../views/owner/appointments";
+import OwnerRedirect from "../views/owner/redirect";
 
 
 const publicRoutes = [
@@ -90,6 +102,11 @@ const privateRoutes = [
     component: PersonalPage
   },
   {
+    name: "admin dashboard",
+    path: "/admin/dashboard",
+    component: AdminDashboard,
+  },
+  {
     name: "clinic",
     path: "/clinic",
     component: ClinicManagerPage,
@@ -103,6 +120,21 @@ const privateRoutes = [
     name: "schedule",
     path: "/schedule",
     component: ScheduleManagerPage,
+  },
+  {
+    name: "shift",
+    path: "/shift",
+    component: ShiftManagerPage,
+  },
+  {
+    name: "bill",
+    path: "/bill",
+    component: BillManagerPage,
+  },
+  {
+    name: "service",
+    path: "/service",
+    component: ServiceManagerPage,
   },
 
   {
@@ -196,6 +228,40 @@ const privateRoutes = [
     name: "pending assignments",
     path: "/le-tan/assignments",
     component: PendingAssignments,
+  },
+
+  // Owner routes
+  {
+    name: "owner dashboard",
+    path: "/owner",
+    component: OwnerDashboard,
+  },
+  {
+    name: "clinic info",
+    path: "/owner/clinic-info",
+    component: ClinicInfo,
+  },
+  {
+    name: "staff management",
+    path: "/owner/staff",
+    component: StaffManagement,
+  },
+  {
+    name: "revenue management",
+    path: "/owner/revenue",
+    component: RevenueManagement,
+  },
+  {
+    name: "appointment management",
+    path: "/owner/appointments",
+    component: AppointmentManagement,
+  },
+
+  // Redirect old route to new route for owner
+  {
+    name: "owner redirect",
+    path: "/phongkham",
+    component: OwnerRedirect,
   },
 
   // {

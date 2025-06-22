@@ -4,6 +4,7 @@ const controller = require('../controllers/caKhamController');
 
 router.get('/', controller.getAll);
 router.get('/by-date', controller.getByDate);
+router.get('/doctor/:maNhaSi', controller.getByDoctor);
 // router.get('/:id', controller.getById);
 router.post('/', controller.create);
 router.put('/:id', controller.update);

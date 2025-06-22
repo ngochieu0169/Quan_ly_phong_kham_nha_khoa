@@ -38,10 +38,10 @@ function ContainerManager({ children }: ContainerManagerProps) {
     { path: "/admin/dashboard", label: "Tổng quan", icon: <FaHome /> },
     { path: "/clinic", label: "Quản lý phòng khám", icon: <FaClinicMedical /> },
     { path: "/account", label: "Quản lý tài khoản", icon: <FaUserCog /> },
-    { path: "/shift", label: "Quản lý ca khám", icon: <FaClock /> },
-    { path: "/schedule", label: "Quản lý lịch khám", icon: <FaCalendarAlt /> },
-    { path: "/bill", label: "Quản lý hóa đơn", icon: <FaFileInvoice /> },
-    { path: "/service", label: "Quản lý dịch vụ", icon: <FaTools /> },
+    { path: "/shift", label: "Cập nhật ca khám", icon: <FaClock /> },
+    { path: "/schedule", label: "Cập nhật lịch khám", icon: <FaCalendarAlt /> },
+    { path: "/bill", label: "Cập nhật hóa đơn", icon: <FaFileInvoice /> },
+    { path: "/service", label: "Cập nhật dịch vụ", icon: <FaTools /> },
     { path: "/", label: "Đăng xuất", icon: <FaSignOutAlt /> },
   ];
 
@@ -49,37 +49,37 @@ function ContainerManager({ children }: ContainerManagerProps) {
     {
       path: "/doctor/profile",
       label: "Thông tin tài khoản",
-      icon: <FaClinicMedical />,
+      icon: <FaUserCog />,
     },
     {
       path: "/doctor/regis-shift",
       label: "Đăng ký ca khám",
-      icon: <FaClinicMedical />,
+      icon: <FaClock />,
     },
     {
       path: "/doctor/my-shifts",
       label: "Ca khám của tôi",
-      icon: <FaClinicMedical />,
+      icon: <FaCalendarAlt />,
     },
-    { path: "/notification", label: "Thông báo", icon: <FaClinicMedical /> },
+    { path: "/notification", label: "Thông báo", icon: <FaBell /> },
     {
       path: "/doctor/patients",
       label: "Bệnh nhân của tôi",
-      icon: <FaClinicMedical />,
+      icon: <FaUsers />,
     },
-    { path: "/", label: "Đăng xuất", icon: <FaClinicMedical /> },
+    { path: "/", label: "Đăng xuất", icon: <FaSignOutAlt /> },
   ];
 
   const clinicMenu = [
     { path: "/phongkham", label: "Phòng khám", icon: <FaClinicMedical /> },
-    { path: "/account", label: "Quản lý bác sĩ", icon: <FaClinicMedical /> },
-    { path: "/shift", label: "Quản lý ca khám", icon: <FaClinicMedical /> },
+    { path: "/account", label: "Cập nhật bác sĩ", icon: <FaClinicMedical /> },
+    { path: "/shift", label: "Cập nhật ca khám", icon: <FaClinicMedical /> },
     {
       path: "/schedule",
-      label: "Quản lý lịch khám",
+      label: "Cập nhật lịch khám",
       icon: <FaClinicMedical />,
     },
-    { path: "/bill", label: "Quản lý hóa đơn", icon: <FaClinicMedical /> },
+    { path: "/bill", label: "Cập nhật hóa đơn", icon: <FaClinicMedical /> },
     { path: "/", label: "Đăng xuất", icon: <FaClinicMedical /> },
   ];
 
@@ -102,12 +102,12 @@ function ContainerManager({ children }: ContainerManagerProps) {
 
   // lễ tân
   const receptionistMenu = [
-    { path: "/le-tan", label: "Dashboard", icon: <FaHome /> },
+    { path: "/le-tan", label: "Trang Lễ Tân", icon: <FaHome /> },
     { path: "/profile", label: "Thông tin cá nhân", icon: <FaUserCog /> },
-    { path: "/le-tan/appointments", label: "Quản lý lịch khám", icon: <FaCalendarAlt /> },
+    { path: "/le-tan/appointments", label: "Cập nhật lịch khám", icon: <FaCalendarAlt /> },
     { path: "/le-tan/appointments/create", label: "Tạo lịch khám mới", icon: <FaCalendarAlt /> },
     { path: "/le-tan/doctor-schedule", label: "Lịch làm việc bác sĩ", icon: <FaUsers /> },
-    { path: "/le-tan/patients", label: "Quản lý bệnh nhân", icon: <FaUsers /> },
+    { path: "/le-tan/patients", label: "Cập nhật bệnh nhân", icon: <FaUsers /> },
     { path: "/le-tan/checkin", label: "Xác nhận đến khám", icon: <FaCheckCircle /> },
     { path: "/le-tan/medical-records", label: "Phiếu khám bệnh", icon: <FaPrescriptionBottleAlt /> },
     { path: "/le-tan/billing", label: "Thanh toán", icon: <FaFileInvoice /> },

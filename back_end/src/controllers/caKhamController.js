@@ -13,12 +13,14 @@ exports.getAll = (req, res) => {
       CK.gioKetThuc,
       CK.moTa,
       CK.maNhaSi,
+      NS.hoTen AS tenNhaSi,
       -- Thông tin lịch khám nếu đã có booking
       LK.maLichKham,
       LK.trangThai AS trangThaiLich,
       LK.maBenhNhan,
       LK.trieuChung
     FROM CAKHAM CK
+    LEFT JOIN NHASI NS ON CK.maNhaSi = NS.maNhaSi
     LEFT JOIN LICHKHAM LK
       ON CK.maCaKham = LK.maCaKham
     WHERE CK.ngayKham BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
@@ -217,11 +219,10 @@ exports.getByDate = (req, res) => {
       LK.maBenhNhan,
       LK.trieuChung,
       -- Thông tin bác sĩ
-      ND.hoTen AS tenNhaSi
+      NS.hoTen AS tenNhaSi
     FROM CAKHAM CK
     LEFT JOIN LICHKHAM LK ON CK.maCaKham = LK.maCaKham
     LEFT JOIN NHASI NS ON CK.maNhaSi = NS.maNhaSi
-    LEFT JOIN NGUOIDUNG ND ON NS.maNguoiDung = ND.maNguoiDung
     WHERE DATE(CK.ngayKham) = ?
     ORDER BY CK.gioBatDau ASC
   `;
@@ -263,6 +264,63 @@ exports.getPendingAssignments = (req, res) => {
   db.query(sql, (err, rows) => {
     if (err) {
       console.error('Error getting pending assignments:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+};
+
+// Lấy ca khám theo bác sĩ cụ thể
+exports.getByDoctor = (req, res) => {
+  const { maNhaSi } = req.params;
+  const { startDate, endDate } = req.query;
+
+  let sql = `
+    SELECT 
+      CK.maCaKham,
+      CK.ngayKham,
+      CK.gioBatDau,
+      CK.gioKetThuc,
+      CK.moTa,
+      CK.maNhaSi,
+      -- Thông tin lịch khám (nếu có)
+      LK.maLichKham,
+      LK.trangThai AS trangThaiLich,
+      LK.maBenhNhan,
+      LK.trieuChung,
+      LK.ngayDatLich,
+      -- Thông tin bệnh nhân (nếu có)
+      ND.hoTen AS tenBenhNhan,
+      ND.soDienThoai,
+      ND.eMail,
+      -- Thông tin bác sĩ
+      NS.hoTen AS tenNhaSi
+    FROM CAKHAM CK
+    LEFT JOIN LICHKHAM LK ON CK.maCaKham = LK.maCaKham
+    LEFT JOIN NGUOIDUNG ND ON LK.maBenhNhan = ND.maNguoiDung
+    INNER JOIN NHASI NS ON CK.maNhaSi = NS.maNhaSi
+    WHERE CK.maNhaSi = ?
+  `;
+
+  const params = [maNhaSi];
+
+  // Thêm filter theo ngày nếu có
+  if (startDate && endDate) {
+    sql += ` AND CK.ngayKham BETWEEN ? AND ?`;
+    params.push(startDate, endDate);
+  } else if (startDate) {
+    sql += ` AND CK.ngayKham >= ?`;
+    params.push(startDate);
+  } else if (endDate) {
+    sql += ` AND CK.ngayKham <= ?`;
+    params.push(endDate);
+  }
+
+  sql += ` ORDER BY CK.ngayKham ASC, CK.gioBatDau ASC`;
+
+  db.query(sql, params, (err, rows) => {
+    if (err) {
+      console.error('Error getting shifts by doctor:', err);
       return res.status(500).json({ error: err.message });
     }
     res.json(rows);

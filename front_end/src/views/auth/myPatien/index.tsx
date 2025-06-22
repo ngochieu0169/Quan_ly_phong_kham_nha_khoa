@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { appointmentService, medicalRecordService, userService } from '../../../services';
+import { appointmentService, medicalRecordService, userService, appointmentServiceExtended, serviceService, invoiceService, invoiceServiceExtended } from '../../../services';
 
 interface Patient {
   maNguoiDung: number;
@@ -29,11 +29,28 @@ interface MedicalRecord {
   maLichKham: number;
   ngayKham?: string;
   trieuChung?: string;
+  hasInvoice?: boolean;
 }
 
 interface PatientDetail {
   thongTin: Patient;
   lichSuKham: MedicalRecord[];
+}
+
+interface Service {
+  maDichVu: number;
+  tenDichVu: string;
+  donGia: number;
+  moTa: string;
+  tenLoaiDichVu: string;
+}
+
+interface ServiceUsage {
+  maDichVu: number;
+  tenDichVu: string;
+  soLuong: number;
+  donGia: number;
+  thanhTien: number;
 }
 
 function MyPatients() {
@@ -44,60 +61,47 @@ function MyPatients() {
   const [selectedPatient, setSelectedPatient] = useState<PatientDetail | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showMedicalModal, setShowMedicalModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [medicalForm, setMedicalForm] = useState({
     ketQuaChuanDoan: '',
     ngayTaiKham: ''
   });
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [serviceUsages, setServiceUsages] = useState<ServiceUsage[]>([]);
+  const [selectedMedicalRecord, setSelectedMedicalRecord] = useState<any>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('=== DEBUG MyPatients ===');
+    console.log('User from localStorage:', user);
     setCurrentUser(user);
-    if (user?.nhaSi) {
-      fetchMyPatients();
-    }
   }, []);
+
+  useEffect(() => {
+    if (currentUser && (currentUser.nhaSi?.maNhaSi || currentUser.bacsiData?.maNhaSi)) {
+      fetchMyPatients();
+      fetchServices();
+    }
+  }, [currentUser]);
 
   const fetchMyPatients = async () => {
     try {
       setLoading(true);
 
-      // Get all appointments for this dentist
-      const appointmentsRes = await appointmentService.all();
-      const allAppointments = appointmentsRes.data;
+      // Xử lý cả hai cấu trúc dữ liệu: nhaSi và bacsiData
+      const doctorId = currentUser?.nhaSi?.maNhaSi || currentUser?.bacsiData?.maNhaSi;
 
-      // Filter appointments for current dentist (through shifts)
-      const myAppointments = allAppointments.filter((appointment: any) =>
-        appointment.maNhaSi === currentUser?.nhaSi?.maNhaSi ||
-        appointment.tenNhaSi === currentUser?.nhaSi?.hoTen
-      );
+      if (!doctorId) {
+        toast.error('Không tìm thấy thông tin bác sĩ');
+        return;
+      }
 
-      // Get unique patients
-      const patientIds = [...new Set(myAppointments.map((a: any) => a.maBenhNhan))] as number[];
-      const patientPromises = patientIds.map(id => userService.get(id));
+      // Sử dụng API mới để lấy danh sách bệnh nhân của bác sĩ
+      const patientsRes = await appointmentServiceExtended.getPatientsByDoctor(doctorId);
 
-      const patientsData = await Promise.all(patientPromises);
-
-      // Combine patient info with appointment statistics
-      const patientsWithStats = patientsData.map((patientRes: any) => {
-        const patient = patientRes.data;
-        const patientAppointments = myAppointments.filter((a: any) => a.maBenhNhan === patient.maNguoiDung);
-        const latestAppointment = patientAppointments.sort((a: any, b: any) =>
-          new Date(b.ngayDatLich).getTime() - new Date(a.ngayDatLich).getTime()
-        )[0];
-
-        return {
-          ...patient,
-          soLanKham: patientAppointments.length,
-          lanKhamGanNhat: latestAppointment?.ngayDatLich,
-          maLichKham: latestAppointment?.maLichKham,
-          trieuChung: latestAppointment?.trieuChung,
-          trangThai: latestAppointment?.trangThai
-        };
-      });
-
-      setPatients(patientsWithStats);
+      setPatients(patientsRes.data);
     } catch (error) {
       toast.error('Không thể tải danh sách bệnh nhân');
     } finally {
@@ -105,16 +109,30 @@ function MyPatients() {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+      const servicesRes = await serviceService.all();
+      setServices(servicesRes.data.data); // API trả về { data: [...] }
+    } catch (error) {
+      toast.error('Không thể tải danh sách dịch vụ');
+    }
+  };
+
   const fetchPatientDetail = async (patient: Patient) => {
     try {
-      // Get patient appointments
-      const appointmentsRes = await appointmentService.all();
-      const patientAppointments = appointmentsRes.data.filter((a: any) =>
-        a.maBenhNhan === patient.maNguoiDung &&
-        (a.maNhaSi === currentUser?.nhaSi?.maNhaSi || a.tenNhaSi === currentUser?.nhaSi?.hoTen)
-      );
+      // Xử lý cả hai cấu trúc dữ liệu: nhaSi và bacsiData
+      const doctorId = currentUser?.nhaSi?.maNhaSi || currentUser?.bacsiData?.maNhaSi;
 
-      // Get medical records for these appointments
+      if (!doctorId) {
+        toast.error('Không tìm thấy thông tin bác sĩ');
+        return;
+      }
+
+      // Lấy lịch khám của bệnh nhân này với bác sĩ hiện tại
+      const appointmentsRes = await appointmentServiceExtended.getByDoctor(doctorId);
+      const patientAppointments = appointmentsRes.data.filter((a: any) => a.maBenhNhan === patient.maNguoiDung);
+
+      // Lấy hồ sơ khám bệnh cho các lịch khám này
       const medicalRecordsPromises = patientAppointments.map((a: any) =>
         medicalRecordService.all({ maLichKham: a.maLichKham })
       );
@@ -122,14 +140,35 @@ function MyPatients() {
       const medicalRecordsResponses = await Promise.all(medicalRecordsPromises);
       const allMedicalRecords = medicalRecordsResponses.flatMap(res => res.data);
 
+      // Lấy TẤT CẢ hóa đơn để check
+      const invoicesRes = await invoiceService.all();
+      const allInvoices = invoicesRes.data;
+
+      console.log('DEBUG: All invoices:', allInvoices.map((inv: any) => ({
+        maHoaDon: inv.maHoaDon,
+        maPhieuKham: inv.maPhieuKham,
+        soTien: inv.soTien
+      })));
+
       const patientDetail: PatientDetail = {
         thongTin: patient,
         lichSuKham: allMedicalRecords.map((record: any) => {
           const appointment = patientAppointments.find((a: any) => a.maLichKham === record.maLichKham);
+
+          // Kiểm tra xem phiếu khám cụ thể này đã có hóa đơn hợp lệ chưa
+          const hasInvoice = allInvoices.some((invoice: any) =>
+            invoice.maPhieuKham === record.maPhieuKham &&
+            invoice.soTien &&
+            parseFloat(invoice.soTien) > 0
+          );
+
+          console.log(`DEBUG: Record ${record.maPhieuKham} has invoice:`, hasInvoice);
+
           return {
             ...record,
-            ngayKham: appointment?.ngayDatLich,
-            trieuChung: appointment?.trieuChung
+            ngayKham: appointment?.ngayKham,
+            trieuChung: appointment?.trieuChung,
+            hasInvoice: hasInvoice
           };
         })
       };
@@ -169,6 +208,113 @@ function MyPatients() {
       fetchMyPatients();
     } catch (error) {
       toast.error('Tạo phiếu khám thất bại');
+    }
+  };
+
+  const handleCreateInvoice = (medicalRecord: any) => {
+    // Kiểm tra nếu record đã có hóa đơn thì không cho phép xuất nữa
+    if (medicalRecord.hasInvoice) {
+      toast.warning('Phiếu khám này đã được xuất hóa đơn rồi!');
+      return;
+    }
+
+    setSelectedMedicalRecord(medicalRecord);
+    setServiceUsages([{
+      maDichVu: 0,
+      tenDichVu: '',
+      soLuong: 1,
+      donGia: 0,
+      thanhTien: 0
+    }]);
+    setShowServiceModal(true);
+  };
+
+  const addServiceUsage = () => {
+    setServiceUsages([...serviceUsages, {
+      maDichVu: 0,
+      tenDichVu: '',
+      soLuong: 1,
+      donGia: 0,
+      thanhTien: 0
+    }]);
+  };
+
+  const removeServiceUsage = (index: number) => {
+    setServiceUsages(serviceUsages.filter((_, i) => i !== index));
+  };
+
+  const updateServiceUsage = (index: number, field: keyof ServiceUsage, value: any) => {
+    const updated = [...serviceUsages];
+    updated[index] = { ...updated[index], [field]: value };
+
+    // Auto calculate total when service or quantity changes
+    if (field === 'maDichVu') {
+      const service = services.find(s => s.maDichVu === value);
+      if (service) {
+        updated[index].tenDichVu = service.tenDichVu;
+        updated[index].donGia = service.donGia;
+        updated[index].thanhTien = service.donGia * updated[index].soLuong;
+      }
+    } else if (field === 'soLuong') {
+      updated[index].thanhTien = updated[index].donGia * value;
+    }
+
+    setServiceUsages(updated);
+  };
+
+  const handleSaveInvoice = async () => {
+    if (!selectedMedicalRecord) return;
+
+    const validServices = serviceUsages.filter(usage => usage.maDichVu > 0 && usage.soLuong > 0);
+
+    if (validServices.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một dịch vụ');
+      return;
+    }
+
+    const totalAmount = validServices.reduce((sum, usage) => sum + usage.thanhTien, 0);
+
+    try {
+      const invoiceData = {
+        soTien: totalAmount,
+        phuongThuc: 'Chưa xác định',
+        trangThai: 'Chưa thu tiền',
+        ngaytao: new Date().toISOString(),
+        ngayThanhToan: null,
+        maPhieuKham: selectedMedicalRecord.maPhieuKham,
+        services: validServices.map(service => ({
+          maDichVu: service.maDichVu,
+          soLuong: service.soLuong,
+          ghiChu: `${service.tenDichVu} - ${service.soLuong}x${service.donGia}`
+        }))
+      };
+
+      await invoiceServiceExtended.createWithDetails(invoiceData);
+      toast.success('Tạo hóa đơn thành công! Hóa đơn sẽ xuất hiện trong hệ thống thanh toán.');
+      setShowServiceModal(false);
+      setSelectedMedicalRecord(null);
+      setServiceUsages([]);
+
+      // Refresh patient detail để cập nhật trạng thái đã xuất hóa đơn
+      if (selectedPatient) {
+        await fetchPatientDetail(selectedPatient.thongTin);
+      }
+    } catch (error: any) {
+      console.error('Invoice creation error:', error);
+
+      // Handle specific error from backend
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('trùng lặp')) {
+        toast.error('Phiếu khám này đã có hóa đơn rồi! Vui lòng refresh trang để cập nhật trạng thái.');
+        setShowServiceModal(false);
+        setSelectedMedicalRecord(null);
+
+        // Refresh để cập nhật trạng thái
+        if (selectedPatient) {
+          await fetchPatientDetail(selectedPatient.thongTin);
+        }
+      } else {
+        toast.error('Tạo hóa đơn thất bại');
+      }
     }
   };
 
@@ -299,7 +445,7 @@ function MyPatients() {
                   <div className="mb-3">
                     <div className="d-flex justify-content-between align-items-center mb-1">
                       <small className="text-muted">Số lần khám:</small>
-                      <span className="badge bg-info">{patient.soLanKham}</span>
+                      <strong>{patient.soLanKham}</strong>
                     </div>
                     <div className="d-flex justify-content-between align-items-center mb-1">
                       <small className="text-muted">Lần cuối:</small>
@@ -425,6 +571,8 @@ function MyPatients() {
                                   <th>Triệu chứng</th>
                                   <th>Chẩn đoán</th>
                                   <th>Tái khám</th>
+                                  <th>Trạng thái HĐ</th>
+                                  <th>Thao tác</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -434,6 +582,36 @@ function MyPatients() {
                                     <td>{record.trieuChung || '-'}</td>
                                     <td>{record.ketQuaChuanDoan}</td>
                                     <td>{formatDate(record.ngayTaiKham) || 'Không'}</td>
+                                    <td>
+                                      {record.hasInvoice ? (
+                                        <span className="badge bg-success">
+                                          <i className="icofont-check me-1"></i>Đã xuất
+                                        </span>
+                                      ) : (
+                                        <span className="badge bg-warning text-dark">
+                                          <i className="icofont-clock-time me-1"></i>Chưa xuất
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td>
+                                      {record.hasInvoice ? (
+                                        <button
+                                          className="btn btn-sm btn-secondary"
+                                          disabled
+                                          title="Phiếu khám này đã được xuất hóa đơn"
+                                        >
+                                          <i className="icofont-check me-1"></i>Đã xuất
+                                        </button>
+                                      ) : (
+                                        <button
+                                          className="btn btn-sm btn-success"
+                                          onClick={() => handleCreateInvoice(record)}
+                                          title="Xuất phiếu khám"
+                                        >
+                                          <i className="icofont-bill me-1"></i>Xuất phiếu
+                                        </button>
+                                      )}
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -524,6 +702,144 @@ function MyPatients() {
                   onClick={handleSaveMedicalRecord}
                 >
                   <i className="icofont-save me-2"></i>Lưu phiếu khám
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Selection Modal */}
+      {showServiceModal && selectedMedicalRecord && (
+        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="icofont-bill me-2"></i>
+                  Xuất phiếu khám - Chọn dịch vụ
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowServiceModal(false)}
+                />
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-warning" role="alert">
+                  <i className="icofont-warning-alt me-2"></i>
+                  <strong>Lưu ý:</strong> Mỗi phiếu khám chỉ được xuất hóa đơn một lần duy nhất. Vui lòng kiểm tra kỹ thông tin trước khi tạo.
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Phiếu khám</label>
+                  <p className="form-control-plaintext fw-bold">
+                    PK{selectedMedicalRecord.maPhieuKham.toString().padStart(6, '0')} - {selectedMedicalRecord.ketQuaChuanDoan}
+                  </p>
+                </div>
+
+                {/* Service Selection */}
+                <div className="mb-3">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <label className="form-label">Dịch vụ sử dụng</label>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={addServiceUsage}
+                    >
+                      <i className="icofont-plus me-1"></i>Thêm dịch vụ
+                    </button>
+                  </div>
+
+                  {serviceUsages.map((usage, index) => (
+                    <div key={index} className="row mb-2 align-items-end">
+                      <div className="col-md-5">
+                        <label className="form-label">Dịch vụ</label>
+                        <select
+                          className="form-select"
+                          value={usage.maDichVu}
+                          onChange={(e) => updateServiceUsage(index, 'maDichVu', parseInt(e.target.value))}
+                        >
+                          <option value={0}>Chọn dịch vụ...</option>
+                          {services.map(service => (
+                            <option key={service.maDichVu} value={service.maDichVu}>
+                              {service.tenDichVu} - {new Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND'
+                              }).format(service.donGia)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-md-2">
+                        <label className="form-label">Số lượng</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="1"
+                          value={usage.soLuong}
+                          onChange={(e) => updateServiceUsage(index, 'soLuong', parseInt(e.target.value) || 1)}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Thành tiền</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND'
+                          }).format(usage.thanhTien)}
+                          readOnly
+                        />
+                      </div>
+                      <div className="col-md-2">
+                        {serviceUsages.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-danger w-100"
+                            onClick={() => removeServiceUsage(index)}
+                          >
+                            <i className="icofont-close"></i>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total */}
+                <div className="row">
+                  <div className="col-md-8"></div>
+                  <div className="col-md-4">
+                    <div className="card">
+                      <div className="card-body text-center">
+                        <h6 className="card-title">Tổng tiền</h6>
+                        <h4 className="text-primary">
+                          {new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND'
+                          }).format(serviceUsages.reduce((sum, usage) => sum + usage.thanhTien, 0))}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowServiceModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleSaveInvoice}
+                >
+                  <i className="icofont-save me-2"></i>Tạo hóa đơn
                 </button>
               </div>
             </div>

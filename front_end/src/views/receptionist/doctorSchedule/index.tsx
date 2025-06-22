@@ -275,8 +275,8 @@ function DoctorScheduleManager() {
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 className="mb-1">Quản lý lịch làm việc bác sĩ</h4>
-                    <p className="text-muted mb-0">Theo dõi và quản lý ca khám của các bác sĩ</p>
+                    <h4 className="mb-1">Cập nhật lịch làm việc bác sĩ</h4>
+                    <p className="text-muted mb-0">Theo dõi và cập nhật ca khám của các bác sĩ</p>
                 </div>
             </div>
 

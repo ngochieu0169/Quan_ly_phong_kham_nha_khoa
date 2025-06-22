@@ -170,7 +170,10 @@ INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, an
 (N'Hoàng Văn O', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12'),
 (N'Hoàng Văn Phap', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12'),
 (N'Hoàng Văn Em', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12'),
-(N'Hoàng Văn Linh', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12');
+(N'Hoàng Văn Linh', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12'),
+(N'Nguyễn Hoàng Phúc', '1980-12-15', 'Nam', 'phuc.owner@gmail.com', '0987654321', N'123 Lê Lợi, Quận 1, TP.HCM', 'https://avatar.iran.liara.run/public/35'),
+(N'Trần Thị Minh', '1985-08-20', 'Nữ', 'minh.owner@gmail.com', '0912345678', N'456 Nguyễn Huệ, Quận 1, TP.HCM', 'https://avatar.iran.liara.run/public/25'),
+(N'Lê Văn Hoàng', '1975-03-10', 'Nam', 'hoang.owner@gmail.com', '0934567890', N'789 Hai Bà Trưng, Quận 3, TP.HCM', 'https://avatar.iran.liara.run/public/40');
 
 -- INSERT INTO NGUOIDUNG (hoTen, ngaySinh, gioiTinh, eMail, soDienThoai, diaChi, anh) VALUES 
 -- (N'Nguyễn Hoàng Phúc', '1988-05-05', 'Nam', 'e@example.com', '0900000005', N'Hải Phòng', 'https://avatar.iran.liara.run/public/12');
@@ -186,7 +189,10 @@ INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES
 ('bacsi5', '123456', 2, 9),
 ('letan1', '123456', 3, 10),
 ('benhnhan1', '123456', 4, 4),
-('benhnhan2', '123456', 4, 5);
+('benhnhan2', '123456', 4, 5),
+('chuphongkham1', '123456', 5, 12),
+('chuphongkham2', '123456', 5, 13),
+('chuphongkham3', '123456', 5, 14);
 
 -- INSERT INTO TAIKHOAN (tenTaiKhoan, matKhau, maQuyen, maNguoiDung) VALUES 
 -- ('chuphongkham', '123456', 5, 12);
@@ -197,7 +203,10 @@ INSERT INTO PHONGKHAM (tenPhongKham, diaChi, soDienThoai, gioLamViec, maChuPhong
 (N'Phòng khám B', N'456 Đường B', '0911000002', N'09:00 - 18:00', 'admin', N'duyệt'),
 (N'Phòng khám C', N'789 Đường C', '0911000003', N'07:30 - 16:30', 'admin', N'chưa duyệt'),
 (N'Phòng khám D', N'321 Đường D', '0911000004', N'08:00 - 17:00', 'admin', N'VIP'),
-(N'Phòng khám E', N'654 Đường E', '0911000005', N'09:00 - 18:00', 'admin', N'uy tín');
+(N'Phòng khám E', N'654 Đường E', '0911000005', N'09:00 - 18:00', 'admin', N'uy tín'),
+(N'Nha khoa Hoàng Phúc', N'123 Lê Lợi, Quận 1, TP.HCM', '0987654321', N'07:30 - 19:00', 'chuphongkham1', N'duyệt'),
+(N'Phòng khám Minh Dental', N'456 Nguyễn Huệ, Quận 1, TP.HCM', '0912345678', N'08:00 - 20:00', 'chuphongkham2', N'VIP'),
+(N'Nha khoa Hoàng Gia', N'789 Hai Bà Trưng, Quận 3, TP.HCM', '0934567890', N'08:30 - 18:30', 'chuphongkham3', N'chưa duyệt');
 
 -- NHASI
 INSERT INTO NHASI (maNhaSi, maPhongKham, hoTen, kinhNghiem, chucVu, ghiChu) VALUES

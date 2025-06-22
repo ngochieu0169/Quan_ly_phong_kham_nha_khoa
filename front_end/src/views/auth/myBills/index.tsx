@@ -178,7 +178,7 @@ function MyBills() {
                         <div className="d-flex justify-content-between align-items-center mb-4">
                             <div>
                                 <h2>Hóa đơn của tôi</h2>
-                                <p className="text-muted">Quản lý các hóa đơn khám chữa bệnh</p>
+                                <p className="text-muted">Cập nhật các hóa đơn khám chữa bệnh</p>
                             </div>
                         </div>
 

@@ -77,7 +77,7 @@ function ReceptionistDashboard() {
 
     const menuItems = [
         {
-            title: 'Quản lý lịch khám',
+            title: 'Cập nhật lịch khám',
             icon: 'icofont-calendar',
             color: 'primary',
             path: '/le-tan/appointments',
@@ -91,7 +91,7 @@ function ReceptionistDashboard() {
             description: 'Đặt lịch khám cho bệnh nhân'
         },
         {
-            title: 'Quản lý bệnh nhân',
+            title: 'Cập nhật bệnh nhân',
             icon: 'icofont-users-alt-4',
             color: 'success',
             path: '/le-tan/patients',
@@ -109,14 +109,14 @@ function ReceptionistDashboard() {
             icon: 'icofont-prescription',
             color: 'warning',
             path: '/le-tan/medical-records',
-            description: 'Quản lý phiếu khám'
+            description: 'Cập nhật phiếu khám'
         },
         {
             title: 'Thanh toán',
             icon: 'icofont-money',
             color: 'danger',
             path: '/le-tan/billing',
-            description: 'Quản lý hóa đơn'
+            description: 'Cập nhật hóa đơn'
         },
         {
             title: 'Sắp xếp ca khám',
@@ -148,7 +148,7 @@ function ReceptionistDashboard() {
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 className="mb-1">Dashboard Lễ Tân</h3>
+                    <h3 className="mb-1">Trang Lễ Tân</h3>
                     <p className="text-muted mb-0">Chào mừng bạn đến với hệ thống quản lý phòng khám</p>
                 </div>
                 <button className="btn btn-primary" onClick={fetchDashboardData}>
