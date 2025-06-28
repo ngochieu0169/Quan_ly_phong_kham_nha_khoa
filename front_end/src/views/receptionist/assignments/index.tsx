@@ -18,14 +18,12 @@ interface PendingAssignment {
 }
 
 interface Doctor {
-    maNguoiDung: number;
+    maNhaSi: string;
+    maPhongKham: number;
     hoTen: string;
-    bacsiData?: {
-        maNhaSi: string;
-        maPhongKham: number;
-        kinhNghiem: string;
-        chucVu: string;
-    };
+    kinhNghiem: string;
+    chucVu: string;
+    ghiChu?: string;
 }
 
 function PendingAssignments() {
@@ -245,10 +243,10 @@ function PendingAssignments() {
                                                 <option value="">-- Chọn bác sĩ --</option>
                                                 {doctors.map((doctor) => (
                                                     <option
-                                                        key={doctor.maNguoiDung}
-                                                        value={doctor.bacsiData?.maNhaSi}
+                                                        key={doctor.maNhaSi}
+                                                        value={doctor.maNhaSi}
                                                     >
-                                                        {doctor.hoTen} - {doctor.bacsiData?.chucVu}
+                                                        {doctor.hoTen} - {doctor.chucVu}
                                                     </option>
                                                 ))}
                                             </select>

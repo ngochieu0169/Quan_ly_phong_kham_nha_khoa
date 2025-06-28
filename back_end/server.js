@@ -18,6 +18,7 @@ const lichKham = require('./src/routers/lichKhamRoutes');
 const thongBao = require('./src/routers/thongBaoRoutes');
 const chiTietPhieuKham = require('./src/routers/chiTietPhieuKhamRoutes');
 const hoaDon = require('./src/routers/hoaDonRoutes');
+const blog = require('./src/routers/blogRoutes');
 
 
 
@@ -67,6 +68,8 @@ app.use('/api/chitietphieukham', chiTietPhieuKham);
 app.use('/api/hoadon', hoaDon);
 
 app.use('/api/thongbao', thongBao);
+
+app.use('/api/blog', blog);
 
 
 

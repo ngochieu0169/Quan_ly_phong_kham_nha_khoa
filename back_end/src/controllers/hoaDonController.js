@@ -3,7 +3,22 @@ const db = require('../configs/database');
 
 // GET all hoá đơn
 exports.getAll = (req, res) => {
-  db.query('SELECT * FROM HOADON', (err, rows) => {
+  const sql = `
+    SELECT 
+      HD.*,
+      PK.ketQuaChuanDoan,
+      LK.trieuChung, LK.ngayDatLich, LK.maBenhNhan,
+      BN.hoTen AS tenBenhNhan, BN.soDienThoai,
+      CK.ngayKham
+    FROM HOADON HD
+    LEFT JOIN PHIEUKHAM PK ON HD.maPhieuKham = PK.maPhieuKham
+    LEFT JOIN LICHKHAM LK ON PK.maLichKham = LK.maLichKham
+    LEFT JOIN NGUOIDUNG BN ON LK.maBenhNhan = BN.maNguoiDung
+    LEFT JOIN CAKHAM CK ON LK.maCaKham = CK.maCaKham
+    ORDER BY HD.ngaytao DESC
+  `;
+
+  db.query(sql, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -47,10 +62,14 @@ exports.create = (req, res) => {
   }
 
   function createInvoice() {
+    // Format ngày tạo từ ISO string thành MySQL DATETIME  
+    const formattedNgayTao = ngaytao ? new Date(ngaytao).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const formattedNgayThanhToan = ngayThanhToan ? new Date(ngayThanhToan).toISOString().slice(0, 19).replace('T', ' ') : null;
+
     db.query(
       `INSERT INTO HOADON (soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham],
+      [soTien, phuongThuc, trangThai, formattedNgayTao, formattedNgayThanhToan, maPhieuKham],
       (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(201).json({ message: 'Tạo hoá đơn thành công', maHoaDon: result.insertId });
@@ -87,6 +106,10 @@ exports.createWithDetails = (req, res) => {
   }
 
   function createInvoiceWithDetails() {
+    // Format ngày tạo từ ISO string thành MySQL DATETIME
+    const formattedNgayTao = ngaytao ? new Date(ngaytao).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const formattedNgayThanhToan = ngayThanhToan ? new Date(ngayThanhToan).toISOString().slice(0, 19).replace('T', ' ') : null;
+
     // Bắt đầu transaction
     db.beginTransaction((err) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -95,7 +118,7 @@ exports.createWithDetails = (req, res) => {
       db.query(
         `INSERT INTO HOADON (soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham],
+        [soTien, phuongThuc, trangThai, formattedNgayTao, formattedNgayThanhToan, maPhieuKham],
         (err, result) => {
           if (err) {
             return db.rollback(() => {
@@ -177,11 +200,16 @@ exports.createWithDetails = (req, res) => {
 exports.update = (req, res) => {
   const { id } = req.params;
   const { soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham } = req.body;
+
+  // Format ngày tạo từ ISO string thành MySQL DATETIME
+  const formattedNgayTao = ngaytao ? new Date(ngaytao).toISOString().slice(0, 19).replace('T', ' ') : null;
+  const formattedNgayThanhToan = ngayThanhToan ? new Date(ngayThanhToan).toISOString().slice(0, 19).replace('T', ' ') : null;
+
   db.query(
     `UPDATE HOADON
      SET soTien = ?, phuongThuc = ?, trangThai = ?, ngaytao = ?, ngayThanhToan = ?, maPhieuKham = ?
      WHERE maHoaDon = ?`,
-    [soTien, phuongThuc, trangThai, ngaytao, ngayThanhToan, maPhieuKham, id],
+    [soTien, phuongThuc, trangThai, formattedNgayTao, formattedNgayThanhToan, maPhieuKham, id],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy hoá đơn' });

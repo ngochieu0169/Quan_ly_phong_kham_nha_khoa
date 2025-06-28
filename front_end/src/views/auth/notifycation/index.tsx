@@ -24,18 +24,20 @@ function NotificationPage() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setCurrentUser(user);
     if (user?.tenTaiKhoan) {
-      fetchNotifications();
+      fetchNotifications(user.tenTaiKhoan);
     }
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (userTaiKhoan?: string) => {
     try {
       setLoading(true);
       const res = await notificationService.all();
 
+      const currentUserTaiKhoan = userTaiKhoan || currentUser?.tenTaiKhoan;
+
       // Filter notifications for current user
       const userNotifications = res.data.filter((notif: Notification) =>
-        notif.maNguoiNhan === currentUser?.tenTaiKhoan
+        notif.maNguoiNhan === currentUserTaiKhoan
       );
 
       // Sort by date (newest first)
@@ -174,7 +176,7 @@ function NotificationPage() {
               <i className="icofont-check-alt me-2"></i>Đánh dấu tất cả đã đọc
             </button>
           )}
-          <button className="btn btn-primary btn-sm" onClick={fetchNotifications}>
+          <button className="btn btn-primary btn-sm" onClick={() => fetchNotifications()}>
             <i className="icofont-refresh me-2"></i>Làm mới
           </button>
         </div>

@@ -3,9 +3,10 @@ const db = require('../configs/database');
 // GET all thong bao kèm thông tin tài khoản người nhận
 exports.getAllThongBao = (req, res) => {
   const sql = `
-    SELECT tb.maThongBao, tb.maNguoiNhan, tb.tieuDe, tb.noiDung, tb.ngayTao, tk.tenTaiKhoan, tk.hoTen, tk.email
+    SELECT tb.maThongBao, tb.maNguoiNhan, tb.tieuDe, tb.noiDung, tb.ngayTao, tk.tenTaiKhoan, nd.hoTen, nd.eMail as email
     FROM THONGBAO tb
     LEFT JOIN TAIKHOAN tk ON tb.maNguoiNhan = tk.tenTaiKhoan
+    LEFT JOIN NGUOIDUNG nd ON tk.maNguoiDung = nd.maNguoiDung
     ORDER BY tb.ngayTao DESC
   `;
   db.query(sql, (err, results) => {
@@ -18,9 +19,10 @@ exports.getAllThongBao = (req, res) => {
 exports.getThongBaoById = (req, res) => {
   const { id } = req.params;
   const sql = `
-    SELECT tb.maThongBao, tb.maNguoiNhan, tb.tieuDe, tb.noiDung, tb.ngayTao, tk.tenTaiKhoan, tk.hoTen, tk.email
+    SELECT tb.maThongBao, tb.maNguoiNhan, tb.tieuDe, tb.noiDung, tb.ngayTao, tk.tenTaiKhoan, nd.hoTen, nd.eMail as email
     FROM THONGBAO tb
     LEFT JOIN TAIKHOAN tk ON tb.maNguoiNhan = tk.tenTaiKhoan
+    LEFT JOIN NGUOIDUNG nd ON tk.maNguoiDung = nd.maNguoiDung
     WHERE tb.maThongBao = ?
   `;
   db.query(sql, [id], (err, results) => {

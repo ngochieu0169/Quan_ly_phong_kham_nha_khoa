@@ -37,7 +37,7 @@ function App() {
             const Page = route.component;
             return (
               <Route
-                key={route.name}
+                key={`public-${route.name || route.path}`}
                 path={route.path}
                 element={
                   <Container>
@@ -51,7 +51,7 @@ function App() {
             const Page = route.component;
             return (
               <Route
-                key={index}
+                key={`private-${route.name || route.path || index}`}
                 path={route.path}
                 element={
                   <ProtectedRoute>
@@ -64,13 +64,21 @@ function App() {
             );
           })}
           {/* Catch-all route for 404 */}
-          <Route path="*" element={<NotFoundPage />} />{" "}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
-
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        style={{ zIndex: 9999 }}
+      />
     </Router>
-
   );
 }
 

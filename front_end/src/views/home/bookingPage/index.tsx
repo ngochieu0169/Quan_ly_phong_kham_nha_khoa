@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import EmptySchedule from "./emptySchedule";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { notificationService } from "../../../services";
 
 interface Slot {
   id: number;
@@ -19,7 +20,7 @@ const BookingPage = () => {
   const [doctors, setDoctors] = useState<any[]>([]);
   const [selectedPhongKham, setSelectedPhongKham] = useState<string>("");
   const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState({}) as any;
 
   const [formData, setFormData] = useState({
@@ -32,8 +33,57 @@ const BookingPage = () => {
     moiQuanHe: "",
   });
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  // Sử dụng useMemo để tránh parse user mỗi render
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  }, []);
+
   const isLoggedIn = Boolean(user && user.tenTaiKhoan);
+
+  // Function để tính tuổi từ ngày sinh
+  const calculateAge = (birthDate: string) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+
+    return age.toString();
+  };
+
+  // Auto-fill thông tin user khi chọn "Đăng ký cho tôi"
+  useEffect(() => {
+    if (!isRegisterForOther && user && user.hoTen) {
+      // Đăng ký cho chính mình - fill thông tin từ user
+      setFormData(prev => ({
+        ...prev,
+        tenBenhNhan: user.hoTen || "",
+        sdt: user.soDienThoai || "",
+        tuoi: user.ngaySinh ? calculateAge(user.ngaySinh) : "",
+        gioiTinh: user.gioiTinh || "Nam",
+        tenNguoiDatHo: "",
+        moiQuanHe: "",
+      }));
+    } else if (isRegisterForOther) {
+      // Đăng ký hộ - clear thông tin để nhập thông tin người khác
+      setFormData(prev => ({
+        ...prev,
+        tenBenhNhan: "",
+        sdt: "",
+        tuoi: "",
+        gioiTinh: "Nam",
+        tenNguoiDatHo: user.hoTen || "",
+        moiQuanHe: "",
+      }));
+    }
+  }, [isRegisterForOther, user.hoTen, user.soDienThoai, user.ngaySinh, user.gioiTinh]);
 
   // Nếu chưa đăng nhập, hiển thị thông báo
   if (!isLoggedIn) {
@@ -115,7 +165,8 @@ const BookingPage = () => {
   };
 
   // Nhận cả date và slot từ EmptySchedule
-  const handleSelect = (payload: { date: string; slot: Slot | null }) => {
+  const handleSelect = (payload: any) => {
+    // payload.date là Date object từ EmptySchedule
     setSelectedDate(payload.date);
     setSelectedSlot(payload);
     console.log(payload);
@@ -129,7 +180,7 @@ const BookingPage = () => {
       // Lấy tên phòng khám để thêm vào mô tả
       const selectedClinic = phongKhams.find(pk => pk.maPhongKham == selectedPhongKham);
       const payloadCa = {
-        ngayKham: format(new Date(selectedDate), "yyyy-MM-dd"),
+        ngayKham: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
         gioBatDau: selectedSlot.start,
         gioKetThuc: selectedSlot.end,
         moTa: `[PK${selectedPhongKham}] ${formData.trieuChung}`,
@@ -141,7 +192,7 @@ const BookingPage = () => {
         .then((res1) => {
           const maCaKham = res1.data.data.insertId;
           const payloadLich = {
-            ngayDatLich: format(Date.now(), "yyyy-MM-dd"),
+            ngayDatLich: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
             trieuChung: formData.trieuChung,
             trangThai: "Chờ",
             maBenhNhan: user.maNguoiDung,
@@ -153,17 +204,49 @@ const BookingPage = () => {
           };
           return axios.post("http://localhost:3000/api/lichkham", payloadLich);
         })
-        .then(() => {
-          toast.success("Đặt lịch thành công! Lễ tân sẽ phân công bác sĩ cho bạn.");
+        .then(async (lichKhamRes) => {
+          const maLichKham = lichKhamRes.data.maLichKham;
+
+          // Gửi thông báo cho bệnh nhân
+          try {
+            const selectedClinic = phongKhams.find(pk => pk.maPhongKham == selectedPhongKham);
+            const notificationData = {
+              maNguoiNhan: user.tenTaiKhoan,
+              tieuDe: 'Đặt lịch khám thành công',
+              noiDung: `Chúc mừng! Bạn đã đặt lịch khám thành công:\n\n` +
+                `- Mã lịch: LK${maLichKham.toString().padStart(6, '0')}\n` +
+                `- Phòng khám: ${selectedClinic?.tenPhongKham || 'Chưa xác định'}\n` +
+                `- Ngày khám: ${selectedDate ? format(selectedDate, "dd/MM/yyyy") : ""}\n` +
+                `- Giờ khám: ${selectedSlot.start} - ${selectedSlot.end}\n` +
+                `- Bệnh nhân: ${formData.tenBenhNhan}\n` +
+                `- Triệu chứng: ${formData.trieuChung}\n\n` +
+                `Lưu ý: Lễ tân sẽ phân công bác sĩ và thông báo cho bạn sau.\n\n` +
+                `Vui lòng đến đúng giờ hẹn. Xin cảm ơn!`
+            };
+            await notificationService.create(notificationData);
+          } catch (notifError) {
+            console.error('Error sending notification:', notifError);
+            // Không hiển thị lỗi này cho user vì lịch khám đã được tạo thành công
+          }
+
+          console.log('🎉 Booking success - showing toast');
+          console.log('Toast function exists:', typeof toast.success);
+
+          // Toast chính
+          setTimeout(() => {
+            toast.success("Đặt lịch thành công! Lễ tân sẽ phân công bác sĩ cho bạn.");
+          }, 100);
+
           resetForm();
         })
         .catch((err) => {
+          console.error('❌ Booking error (no doctor):', err);
           toast.error("Đăng ký thất bại. Vui lòng thử lại.");
         });
     } else {
       // TH1: Ca khám có sẵn của bác sĩ - sử dụng ca khám đó
       const payloadLich = {
-        ngayDatLich: format(Date.now(), "yyyy-MM-dd"),
+        ngayDatLich: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
         trieuChung: formData.trieuChung,
         trangThai: "Chờ",
         maBenhNhan: user.maNguoiDung,
@@ -176,11 +259,44 @@ const BookingPage = () => {
 
       axios
         .post("http://localhost:3000/api/lichkham", payloadLich)
-        .then(() => {
-          toast.success("Đặt lịch thành công!");
+        .then(async (lichKhamRes) => {
+          const maLichKham = lichKhamRes.data.maLichKham;
+
+          // Gửi thông báo cho bệnh nhân
+          try {
+            const selectedClinic = phongKhams.find(pk => pk.maPhongKham == selectedPhongKham);
+            const selectedDoctorInfo = doctors.find(doc => doc.maNhaSi == selectedDoctor);
+            const notificationData = {
+              maNguoiNhan: user.tenTaiKhoan,
+              tieuDe: 'Đặt lịch khám thành công',
+              noiDung: `Chúc mừng! Bạn đã đặt lịch khám thành công:\n\n` +
+                `- Mã lịch: LK${maLichKham.toString().padStart(6, '0')}\n` +
+                `- Phòng khám: ${selectedClinic?.tenPhongKham || 'Chưa xác định'}\n` +
+                `- Bác sĩ: ${selectedDoctorInfo?.hoTen || 'Chưa xác định'}\n` +
+                `- Ngày khám: ${format(new Date(selectedDate), "dd/MM/yyyy")}\n` +
+                `- Giờ khám: ${selectedSlot.start} - ${selectedSlot.end}\n` +
+                `- Bệnh nhân: ${formData.tenBenhNhan}\n` +
+                `- Triệu chứng: ${formData.trieuChung}\n\n` +
+                `Vui lòng đến đúng giờ hẹn. Xin cảm ơn!`
+            };
+            await notificationService.create(notificationData);
+          } catch (notifError) {
+            console.error('Error sending notification:', notifError);
+            // Không hiển thị lỗi này cho user vì lịch khám đã được tạo thành công
+          }
+
+          console.log('🎉 Booking success (with doctor) - showing toast');
+          console.log('Toast function exists:', typeof toast.success);
+
+          // Toast chính
+          setTimeout(() => {
+            toast.success("Đặt lịch thành công!");
+          }, 100);
+
           resetForm();
         })
         .catch((err) => {
+          console.error('❌ Booking error (with doctor):', err);
           toast.error("Đăng ký thất bại. Vui lòng thử lại.");
         });
     }

@@ -22,6 +22,10 @@ import HomePage from "../views/home/homePage";
 import BookingPage from "../views/home/bookingPage";
 import ClinicsPage from "../views/home/clinicsPage";
 import ServicesPage from "../views/home/servicesPage";
+import DoctorsPage from "../views/home/doctorsPage";
+import DoctorDetailPage from "../views/home/doctorsPage/DoctorDetailPage";
+import BlogPage from "../views/home/aboutPage/BlogPage";
+import BlogDetailPage from "../views/home/aboutPage/BlogDetailPage";
 
 // Receptionist imports
 import ReceptionistDashboard from "../views/receptionist";
@@ -70,6 +74,26 @@ const publicRoutes = [
     name: "services",
     path: "/services",
     component: ServicesPage,
+  },
+  {
+    name: "doctors",
+    path: "/doctors",
+    component: DoctorsPage,
+  },
+  {
+    name: "doctor-detail",
+    path: "/doctor-detail",
+    component: DoctorDetailPage,
+  },
+  {
+    name: "blog",
+    path: "/blog",
+    component: BlogPage,
+  },
+  {
+    name: "blog-detail",
+    path: "/blog-detail",
+    component: BlogDetailPage,
   },
   {
     name: "login",

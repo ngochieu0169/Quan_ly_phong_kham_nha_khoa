@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { appointmentService, shiftService, userService } from '../../../services';
+import { appointmentService, shiftService, userService, notificationService, userServiceExtended } from '../../../services';
 
 interface Appointment {
     maLichKham: number;
@@ -39,6 +39,8 @@ function MyAppointments() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelLoading, setCancelLoading] = useState(false);
 
     const statusOptions = [
         { value: '', label: 'Tất cả trạng thái', color: 'secondary' },
@@ -83,6 +85,66 @@ function MyAppointments() {
     const handleViewDetail = (appointment: Appointment) => {
         setSelectedAppointment(appointment);
         setShowDetailModal(true);
+    };
+
+    // Hủy lịch khám và gửi thông báo đến lễ tân
+    const handleCancelAppointment = async () => {
+        if (!selectedAppointment) return;
+
+        try {
+            setCancelLoading(true);
+
+            // 1. Cập nhật trạng thái lịch khám thành "Hủy"
+            await appointmentService.update(selectedAppointment.maLichKham, { trangThai: 'Hủy' });
+
+            // 2. Lấy danh sách lễ tân để gửi thông báo
+            const receptionistRes = await userServiceExtended.getFullList({ maQuyen: 3 });
+            const receptionists = receptionistRes.data;
+
+            // 3. Gửi thông báo đến tất cả lễ tân
+            const notificationPromises = receptionists.map((receptionist: any) => {
+                const notificationData = {
+                    maNguoiNhan: receptionist.tenTaiKhoan,
+                    tieuDe: 'Bệnh nhân hủy lịch khám',
+                    noiDung: `Bệnh nhân ${user.hoTen} (SĐT: ${user.soDienThoai}) đã hủy lịch khám:\n\n` +
+                        `- Mã lịch: LK${selectedAppointment.maLichKham.toString().padStart(6, '0')}\n` +
+                        `- Ngày khám: ${formatDate(selectedAppointment.ngayKham || selectedAppointment.ngayDatLich)}\n` +
+                        `- Giờ khám: ${selectedAppointment.gioBatDau && selectedAppointment.gioKetThuc ?
+                            `${formatTime(selectedAppointment.gioBatDau)} - ${formatTime(selectedAppointment.gioKetThuc)}` : 'Chưa xác định'}\n` +
+                        `- Bác sĩ: ${selectedAppointment.tenNhaSi || 'Chưa phân công'}\n` +
+                        `- Triệu chứng: ${selectedAppointment.trieuChung}\n\n` +
+                        `Thời gian hủy: ${new Date().toLocaleString('vi-VN')}`
+                };
+                return notificationService.create(notificationData);
+            });
+
+            await Promise.all(notificationPromises);
+
+            toast.success('Hủy lịch khám thành công! Thông báo đã được gửi đến lễ tân.');
+
+            // 4. Cập nhật danh sách lịch khám
+            await fetchMyAppointments();
+
+            // 5. Đóng modal
+            setShowCancelModal(false);
+            setSelectedAppointment(null);
+
+        } catch (error) {
+            console.error('Error cancelling appointment:', error);
+            toast.error('Không thể hủy lịch khám. Vui lòng thử lại.');
+        } finally {
+            setCancelLoading(false);
+        }
+    };
+
+    const handleOpenCancelModal = (appointment: Appointment) => {
+        setSelectedAppointment(appointment);
+        setShowCancelModal(true);
+    };
+
+    // Kiểm tra có thể hủy lịch khám không (chỉ cho phép hủy lịch có trạng thái "Chờ" hoặc "Đã đặt")
+    const canCancelAppointment = (appointment: Appointment) => {
+        return ['Chờ', 'Đã đặt'].includes(appointment.trangThai);
     };
 
     const formatDate = (dateString: string) => {
@@ -301,6 +363,15 @@ function MyAppointments() {
                                                     >
                                                         <i className="icofont-eye me-1"></i>Chi tiết
                                                     </button>
+                                                    {canCancelAppointment(appointment) && (
+                                                        <button
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            onClick={() => handleOpenCancelModal(appointment)}
+                                                            title="Hủy lịch khám"
+                                                        >
+                                                            <i className="icofont-close me-1"></i>Hủy lịch
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -384,6 +455,102 @@ function MyAppointments() {
                                     onClick={() => setShowDetailModal(false)}
                                 >
                                     Đóng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && selectedAppointment && (
+                <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title text-danger">
+                                    <i className="icofont-warning me-2"></i>
+                                    Xác nhận hủy lịch khám
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowCancelModal(false)}
+                                    disabled={cancelLoading}
+                                />
+                            </div>
+                            <div className="modal-body">
+                                <div className="alert alert-warning">
+                                    <i className="icofont-info-circle me-2"></i>
+                                    Bạn có chắc chắn muốn hủy lịch khám này không?
+                                </div>
+
+                                <div className="card">
+                                    <div className="card-body">
+                                        <h6 className="card-title text-primary">
+                                            Thông tin lịch khám
+                                        </h6>
+                                        <div className="row">
+                                            <div className="col-6">
+                                                <strong>Mã lịch:</strong><br />
+                                                <span className="text-muted">LK{selectedAppointment.maLichKham.toString().padStart(6, '0')}</span>
+                                            </div>
+                                            <div className="col-6">
+                                                <strong>Ngày khám:</strong><br />
+                                                <span className="text-muted">{formatDate(selectedAppointment.ngayKham || selectedAppointment.ngayDatLich)}</span>
+                                            </div>
+                                            <div className="col-6 mt-2">
+                                                <strong>Thời gian:</strong><br />
+                                                <span className="text-muted">
+                                                    {selectedAppointment.gioBatDau && selectedAppointment.gioKetThuc
+                                                        ? `${formatTime(selectedAppointment.gioBatDau)} - ${formatTime(selectedAppointment.gioKetThuc)}`
+                                                        : 'Chưa xác định'
+                                                    }
+                                                </span>
+                                            </div>
+                                            <div className="col-6 mt-2">
+                                                <strong>Bác sĩ:</strong><br />
+                                                <span className="text-muted">{selectedAppointment.tenNhaSi || 'Chưa phân công'}</span>
+                                            </div>
+                                            <div className="col-12 mt-2">
+                                                <strong>Triệu chứng:</strong><br />
+                                                <span className="text-muted">{selectedAppointment.trieuChung}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="alert alert-info mt-3">
+                                    <i className="icofont-info-circle me-2"></i>
+                                    Sau khi hủy lịch, thông báo sẽ được gửi đến lễ tân để xử lý.
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => setShowCancelModal(false)}
+                                    disabled={cancelLoading}
+                                >
+                                    Đóng
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-danger"
+                                    onClick={handleCancelAppointment}
+                                    disabled={cancelLoading}
+                                >
+                                    {cancelLoading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            Đang hủy...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="icofont-close me-2"></i>
+                                            Xác nhận hủy lịch
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

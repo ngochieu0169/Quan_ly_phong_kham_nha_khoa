@@ -23,6 +23,7 @@ interface Appointment {
     trangThai: string;
     tenBenhNhan?: string;
     tenNhaSi?: string;
+    soDienThoai?: string;
 }
 
 function ReceptionistMedicalRecords() {
@@ -33,6 +34,15 @@ function ReceptionistMedicalRecords() {
     const [searchTerm, setSearchTerm] = useState('');
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editFormData, setEditFormData] = useState<{
+        ketQuaChuanDoan: string;
+        ngayTaiKham: string;
+    }>({
+        ketQuaChuanDoan: '',
+        ngayTaiKham: ''
+    });
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -101,15 +111,56 @@ function ReceptionistMedicalRecords() {
 
     const handleViewDetail = (record: MedicalRecord) => {
         setSelectedRecord(record);
+        setIsEditing(false);
         setShowDetailModal(true);
     };
 
-    const formatDate = (dateString: string | null) => {
+    const handleEdit = (record: MedicalRecord) => {
+        setSelectedRecord(record);
+        setEditFormData({
+            ketQuaChuanDoan: record.ketQuaChuanDoan,
+            ngayTaiKham: record.ngayTaiKham || ''
+        });
+        setIsEditing(true);
+        setShowDetailModal(true);
+    };
+
+    const handleSave = async () => {
+        if (!selectedRecord) return;
+
+        setSaving(true);
+        const updateData = {
+            ketQuaChuanDoan: editFormData.ketQuaChuanDoan,
+            ngayTaiKham: editFormData.ngayTaiKham || null,
+            maLichKham: selectedRecord.maLichKham
+        };
+
+        const response = await medicalRecordService.update(selectedRecord.maPhieuKham, updateData);
+        if (response.status === 200) {
+            toast.success('Cập nhật phiếu khám thành công!');
+            setIsEditing(false);
+            setShowDetailModal(false);
+            fetchData();
+        } else {
+            toast.error('Có lỗi xảy ra khi cập nhật phiếu khám!');
+        }
+        setSaving(false);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditFormData({
+            ketQuaChuanDoan: '',
+            ngayTaiKham: ''
+        });
+    };
+
+    const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('vi-VN');
     };
 
-    const formatDateTime = (dateString: string | null) => {
+    const formatDateTime = (dateString: string | null | undefined) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleString('vi-VN');
     };
@@ -333,6 +384,13 @@ function ReceptionistMedicalRecords() {
                                                         <i className="icofont-eye"></i>
                                                     </button>
                                                     <button
+                                                        className="btn btn-sm btn-outline-warning"
+                                                        onClick={() => handleEdit(record)}
+                                                        title="Chỉnh sửa"
+                                                    >
+                                                        <i className="icofont-edit"></i>
+                                                    </button>
+                                                    <button
                                                         className="btn btn-sm btn-outline-success"
                                                         title="In phiếu khám"
                                                     >
@@ -417,12 +475,15 @@ function ReceptionistMedicalRecords() {
                             <div className="modal-header">
                                 <h5 className="modal-title">
                                     <i className="icofont-prescription me-2"></i>
-                                    Chi tiết phiếu khám PK{selectedRecord.maPhieuKham.toString().padStart(6, '0')}
+                                    {isEditing ? 'Chỉnh sửa' : 'Chi tiết'} phiếu khám PK{selectedRecord.maPhieuKham.toString().padStart(6, '0')}
                                 </h5>
                                 <button
                                     type="button"
                                     className="btn-close"
-                                    onClick={() => setShowDetailModal(false)}
+                                    onClick={() => {
+                                        setShowDetailModal(false);
+                                        setIsEditing(false);
+                                    }}
                                 />
                             </div>
                             <div className="modal-body">
@@ -453,15 +514,27 @@ function ReceptionistMedicalRecords() {
                                     </div>
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label fw-bold">Ngày tái khám</label>
-                                        <p className="form-control-plaintext">
-                                            {selectedRecord.ngayTaiKham ? (
-                                                <span className="badge bg-warning fs-6">
-                                                    {formatDate(selectedRecord.ngayTaiKham)}
-                                                </span>
-                                            ) : (
-                                                'Không có'
-                                            )}
-                                        </p>
+                                        {isEditing ? (
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={editFormData.ngayTaiKham}
+                                                onChange={(e) => setEditFormData({
+                                                    ...editFormData,
+                                                    ngayTaiKham: e.target.value
+                                                })}
+                                            />
+                                        ) : (
+                                            <p className="form-control-plaintext">
+                                                {selectedRecord.ngayTaiKham ? (
+                                                    <span className="badge bg-warning fs-6">
+                                                        {formatDate(selectedRecord.ngayTaiKham)}
+                                                    </span>
+                                                ) : (
+                                                    'Không có'
+                                                )}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="col-12 mb-3">
                                         <label className="form-label fw-bold">Triệu chứng ban đầu</label>
@@ -471,26 +544,89 @@ function ReceptionistMedicalRecords() {
                                     </div>
                                     <div className="col-12 mb-3">
                                         <label className="form-label fw-bold">Kết quả chẩn đoán</label>
-                                        <p className="form-control-plaintext border rounded p-2 bg-light">
-                                            {selectedRecord.ketQuaChuanDoan}
-                                        </p>
+                                        {isEditing ? (
+                                            <textarea
+                                                className="form-control"
+                                                rows={4}
+                                                value={editFormData.ketQuaChuanDoan}
+                                                onChange={(e) => setEditFormData({
+                                                    ...editFormData,
+                                                    ketQuaChuanDoan: e.target.value
+                                                })}
+                                                placeholder="Nhập kết quả chẩn đoán..."
+                                            />
+                                        ) : (
+                                            <p className="form-control-plaintext border rounded p-2 bg-light">
+                                                {selectedRecord.ketQuaChuanDoan}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => setShowDetailModal(false)}
-                                >
-                                    Đóng
-                                </button>
-                                <button type="button" className="btn btn-primary">
-                                    <i className="icofont-print me-2"></i>In phiếu khám
-                                </button>
-                                <button type="button" className="btn btn-success">
-                                    <i className="icofont-download me-2"></i>Xuất PDF
-                                </button>
+                                {isEditing ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={handleCancelEdit}
+                                            disabled={saving}
+                                        >
+                                            Hủy
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            onClick={handleSave}
+                                            disabled={saving || !editFormData.ketQuaChuanDoan.trim()}
+                                        >
+                                            {saving ? (
+                                                <>
+                                                    <div className="spinner-border spinner-border-sm me-2" role="status">
+                                                        <span className="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Đang lưu...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <i className="icofont-save me-2"></i>Lưu thay đổi
+                                                </>
+                                            )}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={() => {
+                                                setShowDetailModal(false);
+                                                setIsEditing(false);
+                                            }}
+                                        >
+                                            Đóng
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-warning"
+                                            onClick={() => {
+                                                setEditFormData({
+                                                    ketQuaChuanDoan: selectedRecord.ketQuaChuanDoan,
+                                                    ngayTaiKham: selectedRecord.ngayTaiKham || ''
+                                                });
+                                                setIsEditing(true);
+                                            }}
+                                        >
+                                            <i className="icofont-edit me-2"></i>Chỉnh sửa
+                                        </button>
+                                        <button type="button" className="btn btn-primary">
+                                            <i className="icofont-print me-2"></i>In phiếu khám
+                                        </button>
+                                        <button type="button" className="btn btn-success">
+                                            <i className="icofont-download me-2"></i>Xuất PDF
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

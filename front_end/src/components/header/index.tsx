@@ -107,8 +107,7 @@ const TheHeader: React.FC = () => {
                 </Link>
                 <ul className="dropdown-menu">
                   <li><Link className="dropdown-item" to="/doctors">Danh sách bác sĩ</Link></li>
-                  <li><Link className="dropdown-item" to="/doctor-detail">Chi tiết bác sĩ</Link></li>
-                  <li><Link className="dropdown-item" to="/appointment">Đặt lịch khám</Link></li>
+                  <li><Link className="dropdown-item" to="/booking">Đặt lịch khám</Link></li>
                 </ul>
               </li>
               <li className="nav-item dropdown">
@@ -117,7 +116,6 @@ const TheHeader: React.FC = () => {
                 </Link>
                 <ul className="dropdown-menu">
                   <li><Link className="dropdown-item" to="/blog">Blog</Link></li>
-                  <li><Link className="dropdown-item" to="/blog-detail">Chi tiết blog</Link></li>
                 </ul>
               </li>
 

@@ -8,8 +8,11 @@ function defaultHeaders() {
 }
 
 
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('Final baseURL:', import.meta.env.VITE_API_URL || "http://localhost:3000");
+
 const requestAPI: AxiosInstance = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
   // baseURL: "https://blogger-8e4f.onrender.com",
 });
 requestAPI.interceptors.request.use(function (config: InternalAxiosRequestConfig) {

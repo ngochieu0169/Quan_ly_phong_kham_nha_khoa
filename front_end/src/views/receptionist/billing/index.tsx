@@ -91,14 +91,12 @@ function ReceptionistBilling() {
                 serviceService.all()
             ]);
 
-            const invoices = invoiceRes.data;
-            const records = recordRes.data; // Đã có thông tin bệnh nhân
+            const invoices = invoiceRes.data; // Đã có đầy đủ thông tin bệnh nhân từ backend
+            const records = recordRes.data;
 
             console.log('=== BILLING DEBUG ===');
             console.log('Selected date:', selectedDate);
-            console.log('All invoices:', invoices);
-            console.log('All records:', records.length);
-            console.log('Records sample:', records[0]);
+            console.log('All invoices with patient info:', invoices);
 
             // Filter by date
             let filteredInvoices = invoices;
@@ -112,30 +110,19 @@ function ReceptionistBilling() {
                 console.log('Showing all invoices (no date filter)');
             }
 
-            console.log('Filtered invoices:', filteredInvoices);
+            console.log('Final filtered invoices:', filteredInvoices);
 
-            // Enrich invoices with patient info and medical record details
-            const enrichedInvoices = filteredInvoices.map((inv: any) => {
-                const record = records.find((r: any) => r.maPhieuKham === inv.maPhieuKham);
+            // Filter ra những hóa đơn có dữ liệu không hợp lệ (soTien null hoặc maPhieuKham null)
+            const validInvoices = filteredInvoices.filter((inv: any) =>
+                inv.soTien !== null && inv.maPhieuKham !== null
+            );
 
-                console.log(`Processing invoice ${inv.maHoaDon}:`, {
-                    record: record?.maPhieuKham,
-                    tenBenhNhan: record?.benhNhanHoTen,
-                    recordData: record
-                });
+            console.log('Valid invoices only:', validInvoices);
 
-                return {
-                    ...inv,
-                    tenBenhNhan: record?.benhNhanHoTen,
-                    soDienThoai: record?.soDienThoai,
-                    maLichKham: record?.maLichKham,
-                    ketQuaChuanDoan: record?.ketQuaChuanDoan,
-                    trieuChung: record?.trieuChung,
-                    ngayKham: record?.ngayKham
-                };
-            });
+            // Không cần map thêm vì backend đã trả về đầy đủ thông tin
+            setInvoices(validInvoices);
 
-            // Enrich medical records - sử dụng dữ liệu có sẵn
+            // Enrich medical records cho các chức năng khác
             const enrichedRecords = records.map((record: any) => {
                 return {
                     ...record,
@@ -145,10 +132,8 @@ function ReceptionistBilling() {
                 };
             });
 
-            console.log('Final enriched invoices:', enrichedInvoices);
-
-            setInvoices(enrichedInvoices);
             setMedicalRecords(enrichedRecords);
+
             // Kiểm tra cấu trúc dữ liệu services
             const servicesData = serviceRes.data?.data || serviceRes.data;
             console.log('Services data:', servicesData);
@@ -163,13 +148,38 @@ function ReceptionistBilling() {
 
     const handlePayment = async (invoiceId: number, paymentMethod: string) => {
         try {
+            // Hiển thị loading toast
+            const loadingToast = toast.loading('Đang xử lý thanh toán...');
+
             const currentDate = new Date().toISOString();
+
+            // Lấy thông tin hóa đơn hiện tại để giữ lại các trường quan trọng
+            const currentInvoice = selectedInvoice;
+
             await invoiceService.update(invoiceId, {
-                trangThai: 'Đã thu tiền',
+                soTien: currentInvoice?.soTien || 0,
                 phuongThuc: paymentMethod,
-                ngayThanhToan: currentDate
+                trangThai: 'Đã thu tiền',
+                ngaytao: currentInvoice?.ngaytao || currentDate,
+                ngayThanhToan: currentDate,
+                maPhieuKham: currentInvoice?.maPhieuKham || null
             });
-            toast.success(`Thanh toán ${paymentMethod.toLowerCase()} thành công`);
+
+            // Dismiss loading toast
+            toast.dismiss(loadingToast);
+
+            // Hiển thị thông báo thành công tùy theo phương thức
+            if (paymentMethod === 'Tiền mặt') {
+                toast.success('Cập nhật thanh toán thành công!', {
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                });
+            } else {
+                toast.success(`Thanh toán ${paymentMethod.toLowerCase()} thành công`);
+            }
+
             setShowPaymentModal(false);
             setShowQRCode(false);
             setSelectedInvoice(null);
@@ -221,7 +231,7 @@ function ReceptionistBilling() {
             accountNumber: '0123456789', // Số tài khoản
             accountName: 'PHONG KHAM NHA KHOA ABC',
             amount: selectedInvoice.soTien,
-            description: `Thanh toan HD${selectedInvoice.maHoaDon.toString().padStart(6, '0')}`
+            description: `Thanh toan HD${selectedInvoice.maHoaDon?.toString().padStart(6, '0') || 'N/A'}`
         };
 
         // Tạo chuỗi QR theo chuẩn VietQR
@@ -279,7 +289,8 @@ function ReceptionistBilling() {
         return new Date(dateString).toLocaleString('vi-VN');
     };
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadge = (status: string | null | undefined) => {
+        if (!status) return 'badge bg-secondary';
         switch (status) {
             case 'Đã thu tiền': return 'badge bg-success';
             case 'Chưa thu tiền': return 'badge bg-warning text-dark';
@@ -288,7 +299,8 @@ function ReceptionistBilling() {
         }
     };
 
-    const getPaymentMethodIcon = (method: string) => {
+    const getPaymentMethodIcon = (method: string | null | undefined) => {
+        if (!method) return 'icofont-question-circle text-muted';
         switch (method) {
             case 'Tiền mặt': return 'icofont-money text-success';
             case 'Thẻ': return 'icofont-credit-card text-primary';
@@ -482,13 +494,13 @@ function ReceptionistBilling() {
                                         <tr key={invoice.maHoaDon}>
                                             <td>{startIndex + index + 1}</td>
                                             <td>
-                                                <span className="fw-bold">HD{invoice.maHoaDon.toString().padStart(6, '0')}</span>
+                                                <span className="fw-bold">HD{invoice.maHoaDon?.toString().padStart(6, '0') || 'N/A'}</span>
                                             </td>
-                                            <td>PK{invoice.maPhieuKham.toString().padStart(6, '0')}</td>
+                                            <td>PK{invoice.maPhieuKham?.toString().padStart(6, '0') || 'N/A'}</td>
                                             <td>
                                                 <div>
-                                                    <div className="fw-bold">{invoice.tenBenhNhan}</div>
-                                                    <small className="text-muted">{invoice.soDienThoai}</small>
+                                                    <div className="fw-bold">{invoice.tenBenhNhan || 'N/A'}</div>
+                                                    <small className="text-muted">{invoice.soDienThoai || 'N/A'}</small>
                                                 </div>
                                             </td>
                                             <td className="text-primary fw-bold">{formatCurrency(invoice.soTien)}</td>
@@ -601,7 +613,7 @@ function ReceptionistBilling() {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    Thanh toán - HD{selectedInvoice.maHoaDon.toString().padStart(6, '0')}
+                                    Thanh toán - HD{selectedInvoice.maHoaDon?.toString().padStart(6, '0') || 'N/A'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)} />
                             </div>
@@ -609,9 +621,9 @@ function ReceptionistBilling() {
                                 <div className="mb-4 p-3 bg-light rounded">
                                     <div className="row">
                                         <div className="col-md-6">
-                                            <div><strong>Bệnh nhân:</strong> {selectedInvoice.tenBenhNhan}</div>
-                                            <div><strong>SĐT:</strong> {selectedInvoice.soDienThoai}</div>
-                                            <div><strong>Phiếu khám:</strong> PK{selectedInvoice.maPhieuKham.toString().padStart(6, '0')}</div>
+                                            <div><strong>Bệnh nhân:</strong> {selectedInvoice.tenBenhNhan || 'N/A'}</div>
+                                            <div><strong>SĐT:</strong> {selectedInvoice.soDienThoai || 'N/A'}</div>
+                                            <div><strong>Phiếu khám:</strong> PK{selectedInvoice.maPhieuKham?.toString().padStart(6, '0') || 'N/A'}</div>
                                         </div>
                                         <div className="col-md-6 text-end">
                                             <div><strong>Ngày tạo:</strong> {formatDate(selectedInvoice.ngaytao)}</div>
@@ -733,7 +745,7 @@ function ReceptionistBilling() {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    Chi tiết hóa đơn - HD{selectedInvoice.maHoaDon.toString().padStart(6, '0')}
+                                    Chi tiết hóa đơn - HD{selectedInvoice.maHoaDon?.toString().padStart(6, '0') || 'N/A'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={() => setShowDetailModal(false)} />
                             </div>
@@ -741,16 +753,16 @@ function ReceptionistBilling() {
                                 <div className="mb-4 p-3 bg-light rounded">
                                     <div className="row">
                                         <div className="col-md-6">
-                                            <div><strong>Bệnh nhân:</strong> {selectedInvoice.tenBenhNhan}</div>
-                                            <div><strong>SĐT:</strong> {selectedInvoice.soDienThoai}</div>
+                                            <div><strong>Bệnh nhân:</strong> {selectedInvoice.tenBenhNhan || 'N/A'}</div>
+                                            <div><strong>SĐT:</strong> {selectedInvoice.soDienThoai || 'N/A'}</div>
                                             <div><strong>Ngày khám:</strong> {formatDate(selectedInvoice.ngayKham || null)}</div>
                                             {selectedInvoice.trieuChung && (
                                                 <div><strong>Triệu chứng:</strong> {selectedInvoice.trieuChung}</div>
                                             )}
                                         </div>
                                         <div className="col-md-6 text-end">
-                                            <div><strong>Mã HĐ:</strong> HD{selectedInvoice.maHoaDon.toString().padStart(6, '0')}</div>
-                                            <div><strong>Phiếu khám:</strong> PK{selectedInvoice.maPhieuKham.toString().padStart(6, '0')}</div>
+                                            <div><strong>Mã HĐ:</strong> HD{selectedInvoice.maHoaDon?.toString().padStart(6, '0') || 'N/A'}</div>
+                                            <div><strong>Phiếu khám:</strong> PK{selectedInvoice.maPhieuKham?.toString().padStart(6, '0') || 'N/A'}</div>
                                             <div><strong>Ngày tạo:</strong> {formatDate(selectedInvoice.ngaytao)}</div>
                                             <div><strong>Trạng thái:</strong> <span className={getStatusBadge(selectedInvoice.trangThai)}>{selectedInvoice.trangThai}</span></div>
                                             <div className="mt-2">

@@ -1,7 +1,7 @@
 // controllers/nhaSiController.js
 const db = require('../configs/database');
 
-// Lấy danh sách nha sĩ (có thể filter theo phòng khám)
+// Lấy danh sách nha sĩ (có thể filter theo phòng khám) với thông tin user
 exports.getAll = (req, res) => {
   const { maPhongKham } = req.query;
 
@@ -9,11 +9,26 @@ exports.getAll = (req, res) => {
   console.log('Query params:', req.query);
   console.log('maPhongKham:', maPhongKham);
 
-  let sql = `SELECT * FROM NHASI`;
+  let sql = `
+    SELECT 
+      NS.*,
+      ND.ngaySinh,
+      ND.gioiTinh,
+      ND.eMail,
+      ND.soDienThoai,
+      ND.diaChi,
+      ND.anh,
+      PK.tenPhongKham,
+      PK.diaChi as diaChiPhongKham
+    FROM NHASI NS
+    LEFT JOIN TAIKHOAN TK ON NS.maNhaSi = TK.tenTaiKhoan
+    LEFT JOIN NGUOIDUNG ND ON TK.maNguoiDung = ND.maNguoiDung
+    LEFT JOIN PHONGKHAM PK ON NS.maPhongKham = PK.maPhongKham
+  `;
   const params = [];
 
   if (maPhongKham) {
-    sql += ` WHERE maPhongKham = ?`;
+    sql += ` WHERE NS.maPhongKham = ?`;
     params.push(maPhongKham);
   }
 
@@ -25,20 +40,89 @@ exports.getAll = (req, res) => {
       console.log('DB Error:', err);
       return res.status(500).json({ error: err.message });
     }
-    console.log('Results count:', results.length);
-    res.json(results);
+
+    // Format the results to include userData and phongKhamData
+    const formattedResults = results.map(doctor => ({
+      maNhaSi: doctor.maNhaSi,
+      maPhongKham: doctor.maPhongKham,
+      hoTen: doctor.hoTen,
+      kinhNghiem: doctor.kinhNghiem,
+      chucVu: doctor.chucVu,
+      ghiChu: doctor.ghiChu,
+      userData: {
+        ngaySinh: doctor.ngaySinh,
+        gioiTinh: doctor.gioiTinh,
+        eMail: doctor.eMail,
+        soDienThoai: doctor.soDienThoai,
+        diaChi: doctor.diaChi,
+        anh: doctor.anh
+      },
+      phongKhamData: {
+        tenPhongKham: doctor.tenPhongKham,
+        diaChi: doctor.diaChiPhongKham
+      }
+    }));
+
+    console.log('Results count:', formattedResults.length);
+    res.json(formattedResults);
   });
 };
 
-// Lấy thông tin 1 nha sĩ theo mã
+// Lấy thông tin 1 nha sĩ theo mã với thông tin user và phòng khám
 exports.getById = (req, res) => {
   const { id } = req.params;
-  const sql = `SELECT * FROM NHASI WHERE maNhaSi = ?`;
+  const sql = `
+    SELECT 
+      NS.*,
+      ND.ngaySinh,
+      ND.gioiTinh,
+      ND.eMail,
+      ND.soDienThoai,
+      ND.diaChi,
+      ND.anh,
+      PK.tenPhongKham,
+      PK.diaChi as diaChiPhongKham,
+      PK.soDienThoai as soDienThoaiPhongKham,
+      PK.eMail as eMailPhongKham,
+      PK.moTa as moTaPhongKham
+    FROM NHASI NS
+    LEFT JOIN TAIKHOAN TK ON NS.maNhaSi = TK.tenTaiKhoan
+    LEFT JOIN NGUOIDUNG ND ON TK.maNguoiDung = ND.maNguoiDung
+    LEFT JOIN PHONGKHAM PK ON NS.maPhongKham = PK.maPhongKham
+    WHERE NS.maNhaSi = ?
+  `;
+
   db.query(sql, [id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0)
       return res.status(404).json({ message: 'Không tìm thấy nha sĩ' });
-    res.json(results[0]);
+
+    const doctor = results[0];
+    const formattedResult = {
+      maNhaSi: doctor.maNhaSi,
+      maPhongKham: doctor.maPhongKham,
+      hoTen: doctor.hoTen,
+      kinhNghiem: doctor.kinhNghiem,
+      chucVu: doctor.chucVu,
+      ghiChu: doctor.ghiChu,
+      userData: {
+        ngaySinh: doctor.ngaySinh,
+        gioiTinh: doctor.gioiTinh,
+        eMail: doctor.eMail,
+        soDienThoai: doctor.soDienThoai,
+        diaChi: doctor.diaChi,
+        anh: doctor.anh
+      },
+      phongKhamData: {
+        tenPhongKham: doctor.tenPhongKham,
+        diaChi: doctor.diaChiPhongKham,
+        soDienThoai: doctor.soDienThoaiPhongKham,
+        eMail: doctor.eMailPhongKham,
+        moTa: doctor.moTaPhongKham
+      }
+    };
+
+    res.json(formattedResult);
   });
 };
 
